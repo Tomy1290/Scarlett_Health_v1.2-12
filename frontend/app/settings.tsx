@@ -393,8 +393,9 @@ export default function SettingsScreen() {
                 <TextInput placeholder={state.language==='de'?'Label':(state.language==='pl'?'Etykieta':'Label')} placeholderTextColor={colors.muted} value={customLabel} onChangeText={setCustomLabel} style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, color: colors.text, backgroundColor: colors.input }} />
                 <View style={{ width: 100 }}>
                   <TimePicker
-                    value={customTime}
-                    onChange={setCustomTime}
+                    time={customTime}
+                    onTimeChange={setCustomTime}
+                    colors={colors}
                     style={{ borderWidth: 1, borderColor: colors.muted, borderRadius: 8, backgroundColor: colors.input }}
                   />
                 </View>
