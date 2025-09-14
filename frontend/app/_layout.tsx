@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Image, View, Text, AppState } from 'react-native';
+import { Image, View, Text } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { ensureAndroidChannel, ensureNotificationPermissions } from "../src/utils/notifications";
 import { useAppStore } from "../src/store/useStore";
