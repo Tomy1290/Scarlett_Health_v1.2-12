@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform, Alert, Switch } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
@@ -8,8 +8,14 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
 import { useRouter } from "expo-router";
 import { useAppStore } from "../src/store/useStore";
-import { ensureAndroidChannel, ensureNotificationPermissions, scheduleDailyReminder, cancelNotification, testNotification, getScheduledNotifications } from "../src/utils/notifications";
-import { parseHHMM } from "../src/utils/notifications";
+import { 
+  initializeNotifications, 
+  scheduleDailyReminder, 
+  cancelNotification, 
+  testNotification, 
+  getScheduledNotifications 
+} from "../src/utils/notifications";
+import { TimePicker } from "../src/components/TimePicker";
 
 function useThemeColors(theme: string) {
   if (theme === 'pink_pastel') return { bg: '#fff0f5', card: '#ffe4ef', primary: '#d81b60', text: '#3a2f33', muted: '#8a6b75', input: '#fff' };
