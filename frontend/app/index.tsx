@@ -54,9 +54,11 @@ export default function Home() {
 
   const now = new Date();
   const { weekKey, dayKeys } = getWeekRange(now);
-  const weeklyEvent = getCurrentWeeklyEvent(now);
-  const evProg = computeEventProgress(dayKeys, { days }, weeklyEvent);
-  const evCompleted = evProg.completed || !!eventHistory[weekKey]?.completed;
+  const chainsAll = computeChains(state);
+  // choose current chain by deterministic index tied to weekKey
+  const chainIdx = Math.abs(weekKey.split('').reduce((a,c)=>a+c.charCodeAt(0),0)) % chainsAll.length;
+  const currentChain = chainsAll[chainIdx];
+  const evCompleted = currentChain ? currentChain.nextPercent >= 100 : false;
 
   // Auto-complete weekly event when reaching 100% (once)
   useEffect(() => {
