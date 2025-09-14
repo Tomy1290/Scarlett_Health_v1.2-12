@@ -56,19 +56,9 @@ export default function Home() {
   const { weekKey, dayKeys } = getWeekRange(now);
   const chainsAll = computeChains(state);
   // choose current chain by deterministic index tied to weekKey
-  const chainIdx = Math.abs(weekKey.split('').reduce((a,c)=>a+c.charCodeAt(0),0)) % chainsAll.length;
+  const chainIdx = Math.abs(weekKey.split('').reduce((a,c)=>a+c.charCodeAt(0),0)) % Math.max(1, chainsAll.length);
   const currentChain = chainsAll[chainIdx];
   const evCompleted = currentChain ? currentChain.nextPercent >= 100 : false;
-
-  // Auto-complete weekly event when reaching 100% (once)
-  useEffect(() => {
-    if (!state.eventsEnabled) return;
-    if (!weeklyEvent) return;
-    const wasCompleted = !!eventHistory[weekKey]?.completed;
-    if (evProg.completed && !wasCompleted) {
-      state.completeEvent(weekKey, { id: weeklyEvent.id, xp: weeklyEvent.xp });
-    }
-  }, [evProg.completed, weekKey, weeklyEvent, state.eventsEnabled]);
 
   const [weightModal, setWeightModal] = useState(false);
   const [weightInput, setWeightInput] = useState<string>(day?.weight ? String(day.weight) : "");
@@ -350,7 +340,7 @@ export default function Home() {
           )}
         </View>
 
-        {/* Weekly Event */}
+        {/* Weekly Event (based on current chain status) */}
         <View style={[styles.card, { backgroundColor: colors.card }]}> 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -363,14 +353,14 @@ export default function Home() {
           </View>
           {state.eventsEnabled === false ? (
             <Text style={{ color: colors.muted, marginTop: 6 }}>{t('Events sind deaktiviert (siehe Einstellungen).', 'Events are disabled (see Settings).', 'Wydarzenia są wyłączone (patrz Ustawienia).')}</Text>
-          ) : weeklyEvent ? (
+          ) : currentChain ? (
             <View style={{ marginTop: 6 }}>
-              <Text style={{ color: colors.text }}>{weeklyEvent.title(language === 'en' ? 'en' : 'de')}</Text>
-              <Text style={{ color: colors.muted, marginTop: 4 }}>{weeklyEvent.description(language === 'en' ? 'en' : 'de')}</Text>
+              <Text style={{ color: colors.text }}>{currentChain.title}</Text>
+              {currentChain.nextTitle ? <Text style={{ color: colors.muted, marginTop: 4 }}>{t('Als Nächstes', 'Next', 'Następne')}: {currentChain.nextTitle}</Text> : null}
               <View style={{ height: 6, backgroundColor: colors.bg, borderRadius: 3, overflow: 'hidden', marginTop: 6 }}>
-                <View style={{ width: `${Math.round(evProg.percent || 0)}%`, height: 6, backgroundColor: evProg.completed ? '#2bb673' : colors.primary }} />
+                <View style={{ width: `${Math.round(currentChain.nextPercent || 0)}%`, height: 6, backgroundColor: (currentChain.nextPercent || 0) >= 100 ? '#2bb673' : colors.primary }} />
               </View>
-              <Text style={{ color: colors.muted, marginTop: 4 }}>{Math.round(evProg.percent || 0)}% {evProg.completed ? t('abgeschlossen','completed','ukończone') : ''}</Text>
+              <Text style={{ color: colors.muted, marginTop: 4 }}>{Math.round(currentChain.nextPercent || 0)}% {(currentChain.nextPercent || 0) >= 100 ? t('abgeschlossen','completed','ukończone') : ''}</Text>
             </View>
           ) : (
             <Text style={{ color: colors.muted, marginTop: 6 }}>{t('Kein aktives Event.', 'No active event.', 'Brak aktywnego wydarzenia.')}</Text>

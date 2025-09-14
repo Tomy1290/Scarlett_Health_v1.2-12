@@ -141,9 +141,9 @@ export const useAppStore = create<AppState>()(
       togglePill: (key, type) => { const days = { ...get().days }; const d = days[key] ?? defaultDay(key); const before = d.pills[type] as boolean; const now = !before; d.pills = { ...d.pills, [type]: now } as any; const xpFlags = { ...(d.xpToday || {}) }; let xpDelta = 0; const pillKey = `pills_${type}`; if (now && !xpFlags[pillKey]) { xpDelta += 15; xpFlags[pillKey] = true; } d.xpToday = xpFlags; d.activityLog = [...(d.activityLog||[]), { ts: Date.now(), time: toHHMM(new Date()) || undefined, action: `pill_${type}`, value: now }]; days[key] = d; if (xpDelta !== 0) set({ days, xp: get().xp + xpDelta, xpLog: [...(get().xpLog||[]), { id: `xp:${Date.now()}`, ts: Date.now(), amount: xpDelta, source: 'other', note: `pills_${type}` }] }); else set({ days }); get().recalcAchievements(); },
       setWeight: (key, weight) => { const days = { ...get().days }; const d = days[key] ?? defaultDay(key); d.weight = weight; d.weightTime = Date.now(); d.activityLog = [...(d.activityLog||[]), { ts: Date.now(), time: toHHMM(new Date()) || undefined, action: 'weight_set', value: weight }]; days[key] = d; set({ days }); get().recalcAchievements(); },
 
-      // Drinks increment/decrement with XP rules:
-      // - Water: +10 XP per positive increment
-      // - Coffee: for each coffee above 6 per day, -10 XP (only when crossing the threshold upwards)
+      // Drinks increment/decrement with XP rules (reversible):
+      // - Water: ±10 XP per delta step
+      // - Coffee: for each coffee above 6 per day, −10 XP when increasing; +10 XP when decreasing back
       incDrink: (key, type, delta) => {
         if (delta === 0) return;
         const days = { ...get().days };
@@ -155,14 +155,14 @@ export const useAppStore = create<AppState>()(
         days[key] = d;
 
         let xpDelta = 0;
-        if (type === 'water' && delta > 0) {
-          xpDelta += 10 * delta;
+        if (type === 'water') {
+          xpDelta += 10 * (next - prev); // reversible
         }
         if (type === 'coffee') {
           const oldExcess = Math.max(0, prev - 6);
           const newExcess = Math.max(0, next - 6);
-          const addExcess = Math.max(0, newExcess - oldExcess);
-          if (addExcess > 0) xpDelta -= 10 * addExcess;
+          if (newExcess > oldExcess) xpDelta -= 10 * (newExcess - oldExcess);
+          if (newExcess < oldExcess) xpDelta += 10 * (oldExcess - newExcess);
         }
 
         if (xpDelta !== 0) {

@@ -10,6 +10,8 @@ Notifications.setNotificationHandler({
   }),
 });
 
+let listenersBound = false;
+
 export async function requestNotificationPermissions(): Promise<boolean> {
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -59,7 +61,7 @@ export function computeNextOccurrence(hour: number, minute: number): Date {
   const now = new Date();
   const next = new Date();
   next.setHours(hour, minute, 0, 0);
-  if (+next <= +now) { next.setDate(next.getDate() + 1); } // schedule for tomorrow if time passed
+  if (+next <= +now) { next.setDate(next.getDate() + 1); }
   return next;
 }
 
@@ -91,6 +93,38 @@ export async function scheduleOneTimeNotification(title: string, body: string, d
     });
     return nid;
   } catch (e) { console.error('❌ scheduleOneTimeNotification error:', e); return null; }
+}
+
+// Auto-reschedule daily reminders after they fire (on receive or when user interacts)
+export function setupDailyAutoReschedule() {
+  if (listenersBound) return; // prevent multiple
+  try {
+    Notifications.addNotificationReceivedListener(async (n) => {
+      try {
+        const d: any = n.request.content.data || {};
+        if (d && d.reminderId && typeof d.hour === 'number' && typeof d.minute === 'number') {
+          const when = computeNextOccurrence(d.hour, d.minute);
+          await Notifications.scheduleNotificationAsync({
+            content: { ...n.request.content, data: d },
+            trigger: { date: when },
+          });
+        }
+      } catch (e) { console.warn('reschedule(received) failed', e); }
+    });
+    Notifications.addNotificationResponseReceivedListener(async (resp) => {
+      try {
+        const d: any = resp.notification.request.content.data || {};
+        if (d && d.reminderId && typeof d.hour === 'number' && typeof d.minute === 'number') {
+          const when = computeNextOccurrence(d.hour, d.minute);
+          await Notifications.scheduleNotificationAsync({
+            content: { ...resp.notification.request.content, data: d },
+            trigger: { date: when },
+          });
+        }
+      } catch (e) { console.warn('reschedule(response) failed', e); }
+    });
+    listenersBound = true;
+  } catch {}
 }
 
 export async function cancelNotification(notificationId: string): Promise<void> {

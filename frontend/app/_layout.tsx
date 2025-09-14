@@ -2,12 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Image, View, Text } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import { initializeNotifications } from '../src/utils/notifications';
+import { initializeNotifications, setupDailyAutoReschedule } from '../src/utils/notifications';
 import { scheduleCycleNotifications } from '../src/utils/cycleNotifications';
 import { useAppStore } from "../src/store/useStore";
-import { parseHHMM } from '../src/utils/time';
-import { scheduleDailyNext } from '../src/utils/notifications';
 
 export default function RootLayout() {
   const theme = useAppStore((s) => s.theme);
@@ -23,18 +20,7 @@ export default function RootLayout() {
       if (initialized) {
         const state = useAppStore.getState();
         await scheduleCycleNotifications(state);
-        // Ensure one-time upcoming reminders exist (prevents immediate firing of repeats)
-        try {
-          for (const r of state.reminders || []) {
-            if (!r.enabled) continue;
-            const t = parseHHMM(r.time);
-            if (!t) continue;
-            const meta = state.notificationMeta[r.id];
-            // if no meta or we are past the scheduled time, (re)schedule next
-            const nid = await scheduleDailyNext(r.id, r.label || 'Erinnerung', 'Zeit für eine Aktion', t.hour, t.minute, 'reminders');
-            if (nid) state.setNotificationMeta(r.id, { id: nid, time: r.time });
-          }
-        } catch {}
+        setupDailyAutoReschedule(); // don't schedule all at startup; reschedule after firing
       }
     })();
   }, []);
