@@ -144,6 +144,103 @@ def test_get_status():
         print(f"❌ GET /api/status test FAILED - JSON decode error: {e}")
         return False
 
+def test_post_chat():
+    """Test POST /api/chat endpoint with Emergent LLM Key integration"""
+    print("\n=== Testing POST /api/chat ===")
+    
+    backend_url = get_backend_url()
+    if not backend_url:
+        print("❌ Could not get backend URL from frontend/.env")
+        return False
+    
+    url = f"{backend_url}/api/chat"
+    print(f"Testing URL: {url}")
+    
+    # Test payload as specified in the review request
+    payload = {
+        "mode": "greeting",
+        "language": "de",
+        "model": "gpt-4o-mini",
+        "summary": {}
+    }
+    headers = {"Content-Type": "application/json"}
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.text}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "text" in data and isinstance(data["text"], str) and len(data["text"].strip()) > 0:
+                print("✅ POST /api/chat test PASSED - LLM integration working")
+                print(f"✅ Generated response: {data['text'][:100]}...")
+                return True
+            else:
+                print(f"❌ POST /api/chat test FAILED - Invalid response format: {data}")
+                return False
+        else:
+            print(f"❌ POST /api/chat test FAILED - Status code: {response.status_code}")
+            if response.status_code == 500:
+                print("⚠️  This might indicate an issue with the Emergent LLM Key integration")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ POST /api/chat test FAILED - Request error: {e}")
+        return False
+    except json.JSONDecodeError as e:
+        print(f"❌ POST /api/chat test FAILED - JSON decode error: {e}")
+        return False
+
+def test_post_chat_with_messages():
+    """Test POST /api/chat endpoint with chat mode and messages"""
+    print("\n=== Testing POST /api/chat (Chat Mode) ===")
+    
+    backend_url = get_backend_url()
+    if not backend_url:
+        print("❌ Could not get backend URL from frontend/.env")
+        return False
+    
+    url = f"{backend_url}/api/chat"
+    print(f"Testing URL: {url}")
+    
+    # Test chat mode with messages
+    payload = {
+        "mode": "chat",
+        "language": "en",
+        "model": "gpt-4o-mini",
+        "summary": {"weight": "70kg", "activity": "moderate"},
+        "messages": [
+            {"role": "user", "content": "What's a good breakfast for weight management?"}
+        ]
+    }
+    headers = {"Content-Type": "application/json"}
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.text}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "text" in data and isinstance(data["text"], str) and len(data["text"].strip()) > 0:
+                print("✅ POST /api/chat (Chat Mode) test PASSED")
+                print(f"✅ Generated response: {data['text'][:100]}...")
+                return True
+            else:
+                print(f"❌ POST /api/chat (Chat Mode) test FAILED - Invalid response format: {data}")
+                return False
+        else:
+            print(f"❌ POST /api/chat (Chat Mode) test FAILED - Status code: {response.status_code}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ POST /api/chat (Chat Mode) test FAILED - Request error: {e}")
+        return False
+    except json.JSONDecodeError as e:
+        print(f"❌ POST /api/chat (Chat Mode) test FAILED - JSON decode error: {e}")
+        return False
+
 def check_mongodb_connection():
     """Check if MongoDB is accessible by testing the backend endpoints"""
     print("\n=== Checking MongoDB Connection ===")
