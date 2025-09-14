@@ -2,7 +2,7 @@
   "expo": {
     "name": "Scarletts Gesundheitstracking",
     "slug": "scarlett-gesundheitstracking",
-    "version": "2.1.19",
+    "version": "1.2.20",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "scarlett-health",
