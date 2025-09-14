@@ -55,21 +55,66 @@ export default function SettingsScreen() {
   const [cupInput, setCupInput] = useState(String(state.waterCupMl || 250));
   const [reminderTimes, setReminderTimes] = useState<Record<string, Date>>({});
 
-  // Initialize reminder times from stored reminders
+  // Initialize reminder times from stored reminders - CRASH-PROOF VERSION
   useEffect(() => {
-    const times: Record<string, Date> = {};
-    for (const r of state.reminders) {
-      // Parse stored time string (e.g. "08:00") to Date - CRASH FIX: Check if time exists
-      if (r.time && typeof r.time === 'string' && r.time.includes(':')) {
-        const [hour, minute] = r.time.split(':').map(Number);
-        if (!isNaN(hour) && !isNaN(minute)) {
-          const date = new Date();
-          date.setHours(hour, minute, 0, 0);
-          times[r.id] = date;
+    try {
+      const times: Record<string, Date> = {};
+      
+      // Safety check: Ensure reminders array exists and is an array
+      if (!state.reminders || !Array.isArray(state.reminders)) {
+        console.warn('Reminders is not an array:', state.reminders);
+        setReminderTimes(times);
+        return;
+      }
+      
+      for (const r of state.reminders) {
+        try {
+          // Multiple safety checks
+          if (!r || typeof r !== 'object') {
+            console.warn('Invalid reminder object:', r);
+            continue;
+          }
+          
+          if (!r.id || typeof r.id !== 'string') {
+            console.warn('Invalid reminder ID:', r);
+            continue;
+          }
+          
+          if (!r.time || typeof r.time !== 'string') {
+            console.warn('Invalid reminder time:', r);
+            continue;
+          }
+          
+          // Parse time string
+          if (r.time.includes(':')) {
+            const parts = r.time.split(':');
+            if (parts.length === 2) {
+              const hour = parseInt(parts[0], 10);
+              const minute = parseInt(parts[1], 10);
+              
+              if (!isNaN(hour) && !isNaN(minute) && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+                const date = new Date();
+                date.setHours(hour, minute, 0, 0);
+                times[r.id] = date;
+              } else {
+                console.warn('Invalid hour/minute values:', hour, minute, 'for reminder:', r.id);
+              }
+            } else {
+              console.warn('Invalid time format (not HH:MM):', r.time, 'for reminder:', r.id);
+            }
+          } else {
+            console.warn('Time does not contain colon:', r.time, 'for reminder:', r.id);
+          }
+        } catch (error) {
+          console.error('Error parsing individual reminder:', r, error);
         }
       }
+      
+      setReminderTimes(times);
+    } catch (error) {
+      console.error('Critical error in reminder time parsing:', error);
+      setReminderTimes({});
     }
-    setReminderTimes(times);
   }, [state.reminders]);
 
   async function saveCustomReminder() {
