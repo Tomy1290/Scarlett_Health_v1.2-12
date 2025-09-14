@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Fix Weekly Event names not displaying on Dashboard (only 100% progress bar visible) and fix all notifications system. Also re-integrate Cloud LLM with automatic fallback to offline AI."
+user_problem_statement: "Fix: Offline-Chat is not reacting correctly; recipes are suggested but not shown/found, and answers for period/cycle questions are repetitive. Fix: Chat header-buttons for recipes/categories do not react. Integrate HyperOS-specific device detection to automatically use `seconds` triggers for notifications on these devices."
 backend:
   - task: "API: GET /api/"
     implemented: true
