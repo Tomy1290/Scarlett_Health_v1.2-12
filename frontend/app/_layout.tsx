@@ -3,40 +3,38 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Image, View, Text } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { ensureAndroidChannel, ensureNotificationPermissions } from "../src/utils/notifications";
 import { initializeNotifications } from '../src/utils/notifications';
 import { scheduleCycleNotifications } from '../src/utils/cycleNotifications';
 import { useAppStore } from "../src/store/useStore";
-
-
+import { parseHHMM } from '../src/utils/time';
+import { scheduleDailyNext } from '../src/utils/notifications';
 
 export default function RootLayout() {
   const theme = useAppStore((s) => s.theme);
   const barStyle = theme === "pink_vibrant" ? "light" : "dark";
-
   const bg = theme === 'pink_vibrant' ? '#1b0b12' : '#fde7ef';
 
   const [bootVisible, setBootVisible] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setBootVisible(false), 4000); // show boot overlay for 4s
-    return () => clearTimeout(t);
-  }, []);
+  useEffect(() => { const t = setTimeout(() => setBootVisible(false), 1200); return () => clearTimeout(t); }, []);
 
   useEffect(() => {
     (async () => {
-      console.log('🚀 Initializing app notifications...');
-      
-      // Initialize the new notification system
       const initialized = await initializeNotifications();
-      
       if (initialized) {
-        // Schedule automatic cycle notifications
         const state = useAppStore.getState();
         await scheduleCycleNotifications(state);
-        
-        console.log('✅ App notifications fully initialized');
-      } else {
-        console.warn('⚠️ Failed to initialize notifications');
+        // Ensure one-time upcoming reminders exist (prevents immediate firing of repeats)
+        try {
+          for (const r of state.reminders || []) {
+            if (!r.enabled) continue;
+            const t = parseHHMM(r.time);
+            if (!t) continue;
+            const meta = state.notificationMeta[r.id];
+            // if no meta or we are past the scheduled time, (re)schedule next
+            const nid = await scheduleDailyNext(r.id, r.label || 'Erinnerung', 'Zeit für eine Aktion', t.hour, t.minute, 'reminders');
+            if (nid) state.setNotificationMeta(r.id, { id: nid, time: r.time });
+          }
+        } catch {}
       }
     })();
   }, []);
