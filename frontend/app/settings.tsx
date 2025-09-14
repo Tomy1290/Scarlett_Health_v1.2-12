@@ -321,7 +321,13 @@ export default function SettingsScreen() {
             <View style={{ marginTop: 10 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TextInput placeholder={state.language==='de'?'Label':(state.language==='pl'?'Etykieta':'Label')} placeholderTextColor={colors.muted} value={customLabel} onChangeText={setCustomLabel} style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, color: colors.text, backgroundColor: colors.input }} />
-                <TextInput placeholder='HH:MM' placeholderTextColor={colors.muted} value={customTime} onChangeText={(v)=>setCustomTime(formatTimeDigits(v))} style={{ width: 100, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, color: colors.text, backgroundColor: colors.input }} />
+                <View style={{ width: 100 }}>
+                  <TimePicker
+                    value={customTime}
+                    onChange={setCustomTime}
+                    style={{ borderWidth: 1, borderColor: colors.muted, borderRadius: 8, backgroundColor: colors.input }}
+                  />
+                </View>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
                 <TouchableOpacity onPress={() => { setCustomMode(false); setCustomLabel(''); setCustomTime(''); }} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{state.language==='de'?'Abbrechen':(state.language==='pl'?'Anuluj':'Cancel')}</Text></TouchableOpacity>
