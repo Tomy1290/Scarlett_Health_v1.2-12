@@ -340,6 +340,7 @@ test_plan:
     - "HyperOS Device Detection for Notifications"
     - "Chat Recipe Filter System"
     - "Offline Chat Repetitive Responses Fix"
+    - "Direct Frontend LLM Integration"
   stuck_tasks: []
   test_all: false
   test_priority: "completed"
