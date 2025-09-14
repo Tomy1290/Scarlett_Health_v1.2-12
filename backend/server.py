@@ -100,16 +100,23 @@ SYSTEM_PROMPT_PL = (
 )
 
 async def _call_llm(messages: List[Dict[str,str]], model: str) -> str:
+    logger.info(f"_call_llm called with model: {model}, llm_client is None: {llm_client is None}")
+    
     if llm_client is None:
+        logger.warning("LLM client is None, using fallback")
         # Fallback: simple echo/tip if integration not available
         return messages[-1].get('content','').strip() or "Hi!"
+    
     try:
         # Get the user message (last message in the conversation)
         user_message = messages[-1].get('content', '') if messages else ''
+        logger.info(f"Sending message to LLM: {user_message[:50]}...")
         
         # Use the OpenAI LlmChat with provider, model and async send_message
         client_with_model = llm_client.with_model('openai', model)
         resp = await client_with_model.send_message(user_message)
+        
+        logger.info(f"LLM response type: {type(resp)}, content: {str(resp)[:100]}...")
         
         # Extract content from response
         if isinstance(resp, str):
