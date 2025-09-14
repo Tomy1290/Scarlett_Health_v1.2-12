@@ -11,7 +11,7 @@ import { toHHMM } from "../utils/time";
 export type Language = "de" | "en" | "pl";
 export type ThemeName = "pink_default" | "pink_pastel" | "pink_vibrant" | "golden_pink";
 
-export type DayLogEntry = { ts: number; action: string; value?: number | boolean | string; note?: string };
+export type DayLogEntry = { ts: number; time?: string; action: string; value?: number | boolean | string; note?: string };
 
 export type DayData = {
   date: string;
