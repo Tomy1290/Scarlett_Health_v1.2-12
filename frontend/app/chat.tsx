@@ -357,7 +357,50 @@ export default function ChatScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Detail Modal remains as zuvor */}
+      {/* Recipe Detail Modal */}
+      <Modal visible={!!detailId} transparent animationType='slide' onRequestClose={() => setDetailId(null)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
+            {detail && (
+              <View style={[styles.sheet, { backgroundColor: colors.bg, borderColor: colors.muted, maxHeight: '80%' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ color: colors.text, fontWeight: '700', fontSize: 16 }}>{detail.title[state.language as 'de'|'en'|'pl']}</Text>
+                  <TouchableOpacity onPress={() => setDetailId(null)}>
+                    <Ionicons name='close' size={20} color={colors.muted} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={{ color: colors.muted, marginTop: 4 }}>{detail.desc[state.language as 'de'|'en'|'pl']}</Text>
+                
+                <ScrollView contentContainerStyle={{ paddingVertical: 8 }}>
+                  <Text style={{ color: colors.text, fontWeight: '600', marginTop: 8 }}>{lbl('Zutaten','Ingredients','Składniki')}</Text>
+                  {detail.ingredients[state.language as 'de'|'en'|'pl'].map((ing, idx) => (
+                    <Text key={idx} style={{ color: colors.text, marginTop: 4 }}>• {ing}</Text>
+                  ))}
+                  
+                  <Text style={{ color: colors.text, fontWeight: '600', marginTop: 16 }}>{lbl('Zubereitung','Instructions','Przygotowanie')}</Text>
+                  {detail.steps[state.language as 'de'|'en'|'pl'].map((step, idx) => (
+                    <Text key={idx} style={{ color: colors.text, marginTop: 6 }}>{idx + 1}. {step}</Text>
+                  ))}
+                </ScrollView>
+
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      const recipeText = `${detail.title[state.language as 'de'|'en'|'pl']}\n\n${lbl('Zutaten:','Ingredients:','Składniki:')}\n${detail.ingredients[state.language as 'de'|'en'|'pl'].map(i => `• ${i}`).join('\n')}\n\n${lbl('Zubereitung:','Instructions:','Przygotowanie:')}\n${detail.steps[state.language as 'de'|'en'|'pl'].map((s, i) => `${i+1}. ${s}`).join('\n')}`;
+                      const bot = { id: String(Date.now()), sender: 'bot' as const, text: recipeText, createdAt: Date.now() };
+                      state.addChat(bot);
+                      setDetailId(null);
+                    }}
+                    style={[styles.badge, { backgroundColor: colors.primary }]}
+                  >
+                    <Text style={{ color: '#fff' }}>{lbl('In Chat teilen','Share to chat','Udostępnij na czacie')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
