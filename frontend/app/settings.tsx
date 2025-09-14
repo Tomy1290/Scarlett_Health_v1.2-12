@@ -39,11 +39,7 @@ function reminderLabel(type: string, lang: 'de'|'en'|'pl', label?: string) {
   return (lang==='en'?mapEn:(lang==='pl'?mapPl:mapDe))[type] || type;
 }
 
-function formatTimeDigits(input: string) {
-  const digits = (input || '').replace(/[^0-9]/g, '').slice(0, 4);
-  if (digits.length <= 2) return digits;
-  return `${digits.slice(0,2)}:${digits.slice(2)}`;
-}
+
 
 export default function SettingsScreen() {
   const state = useAppStore();
