@@ -33,7 +33,7 @@ function storeCycleNotifications(notifications: CycleNotification[]): void {
   }
 }
 
-async function cancelExistingCycleNotifications(): Promise&lt;void&gt; {
+async function cancelExistingCycleNotifications(): Promise<void> {
   const existing = getStoredCycleNotifications();
   for (const n of existing) {
     if (n.notificationId) await cancelNotification(n.notificationId);
@@ -55,7 +55,7 @@ function t(lang: string, key: string) {
   return texts[key]?.[langKey] || ['Erinnerung', ''];
 }
 
-export async function scheduleCycleNotifications(state: AppState): Promise&lt;void&gt; {
+export async function scheduleCycleNotifications(state: AppState): Promise<void> {
   try {
     console.log('📅 Scheduling automatic cycle notifications...');
     await cancelExistingCycleNotifications();
@@ -71,13 +71,13 @@ export async function scheduleCycleNotifications(state: AppState): Promise&lt;vo
     const next = predictNextStart(state.cycles);
     if (next) {
       const periodDay = new Date(next.getFullYear(), next.getMonth(), next.getDate(), 9, 0, 0);
-      if (periodDay &gt; new Date()) {
+      if (periodDay > new Date()) {
         const [title, body] = t(language, 'period_today');
         const id = await scheduleOneTimeNotification(title, body, periodDay, 'cycle');
         if (id) out.push({ id: `period_today_${Date.now()}`, type: 'period', notificationId: id, scheduledDate: periodDay });
       }
       const periodPrev = new Date(next.getFullYear(), next.getMonth(), next.getDate()-1, 20, 0, 0);
-      if (periodPrev &gt; new Date()) {
+      if (periodPrev > new Date()) {
         const [title, body] = t(language, 'period_tomorrow');
         const id = await scheduleOneTimeNotification(title, body, periodPrev, 'cycle');
         if (id) out.push({ id: `period_tomorrow_${Date.now()}`, type: 'period', notificationId: id, scheduledDate: periodPrev });
@@ -87,7 +87,7 @@ export async function scheduleCycleNotifications(state: AppState): Promise&lt;vo
     const fertile = getFertileWindow(state.cycles);
     if (fertile) {
       const start = new Date(fertile.start.getFullYear(), fertile.start.getMonth(), fertile.start.getDate(), 9, 0, 0);
-      if (start &gt; new Date()) {
+      if (start > new Date()) {
         const [title, body] = t(language, 'fertile_start');
         const id = await scheduleOneTimeNotification(title, body, start, 'cycle');
         if (id) out.push({ id: `fertile_start_${Date.now()}`, type: 'fertile_start', notificationId: id, scheduledDate: start });
@@ -95,14 +95,14 @@ export async function scheduleCycleNotifications(state: AppState): Promise&lt;vo
       const ovu = getOvulationDate(state.cycles);
       if (ovu) {
         const ov = new Date(ovu.getFullYear(), ovu.getMonth(), ovu.getDate(), 10, 0, 0);
-        if (ov &gt; new Date()) {
+        if (ov > new Date()) {
           const [title, body] = t(language, 'ovulation');
           const id = await scheduleOneTimeNotification(title, body, ov, 'cycle');
           if (id) out.push({ id: `ovulation_${Date.now()}`, type: 'ovulation', notificationId: id, scheduledDate: ov });
         }
       }
       const end = new Date(fertile.end.getFullYear(), fertile.end.getMonth(), fertile.end.getDate(), 18, 0, 0);
-      if (end &gt; new Date()) {
+      if (end > new Date()) {
         const [title, body] = t(language, 'fertile_end');
         const id = await scheduleOneTimeNotification(title, body, end, 'cycle');
         if (id) out.push({ id: `fertile_end_${Date.now()}`, type: 'fertile_end', notificationId: id, scheduledDate: end });
@@ -126,6 +126,6 @@ export async function scheduleCycleNotifications(state: AppState): Promise&lt;vo
   }
 }
 
-export async function updateCycleNotifications(state: AppState): Promise&lt;void&gt; {
+export async function updateCycleNotifications(state: AppState): Promise<void> {
   await scheduleCycleNotifications(state);
 }

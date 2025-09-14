@@ -19,7 +19,7 @@ export function parseHHMM(input: string | null | undefined): HM | null {
   } else {
     return null;
   }
-  if (isNaN(hour) || isNaN(minute) || hour &lt; 0 || hour &gt; 23 || minute &lt; 0 || minute &gt; 59) return null;
+  if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
   return { hour, minute };
 }
 
@@ -31,8 +31,8 @@ export function toHHMM(value: string | Date | number | null | undefined): string
     return `${hm.hour.toString().padStart(2, '0')}:${hm.minute.toString().padStart(2, '0')}`;
   }
   if (typeof value === 'number') {
-    // assume milliseconds or minutes; if &lt; 24*60 consider minutes
-    if (value &lt; 24 * 60) {
+    // assume milliseconds or minutes; if < 24*60 consider minutes
+    if (value < 24 * 60) {
       const hour = Math.floor(value / 60);
       const minute = value % 60;
       return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
