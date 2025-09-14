@@ -80,42 +80,31 @@ export default function SettingsScreen() {
       return;
     }
     
-    if (!customLabel.trim()) {
+    if (!customLabel.trim() || !customTime) {
       Alert.alert(state.language==='de'?'Bitte alle Felder ausfüllen':(state.language==='pl'?'Proszę wypełnić wszystkie pola':'Please fill all fields'));
       return;
     }
-    
+
     const initialized = await initializeNotifications();
-    if (!initialized) {
-      Alert.alert('Fehler', 'Benachrichtigungen konnten nicht initialisiert werden.');
-      return;
-    }
-    
+    if (!initialized) return;
+
     const id = `custom_${Date.now()}`;
-    const hour = customTime.getHours();
-    const minute = customTime.getMinutes();
-    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     
-    const notifId = await scheduleDailyReminder(
-      id, 
-      customLabel.trim(), 
-      'Custom reminder', 
-      hour, 
-      minute,
-      'reminders'
-    );
-    
+    // Parse customTime string to hour/minute
+    const [hour, minute] = customTime.split(':').map(Number);
+    const notifId = await scheduleDailyReminder(id, customLabel.trim(), 'Custom reminder', hour, minute, 'reminders');
+
     if (notifId) {
       state.addReminder({ 
         id, 
         type: 'custom', 
         label: customLabel.trim(), 
-        time: timeString, 
+        time: customTime, // Store as string
         enabled: true 
       });
       state.setNotificationMeta(id, { 
         id: notifId, 
-        time: timeString 
+        time: customTime 
       });
       
       // Update local state
@@ -123,8 +112,7 @@ export default function SettingsScreen() {
       
       setCustomMode(false);
       setCustomLabel('');
-      setCustomTime(new Date());
-      
+      setCustomTime('08:00');
       Alert.alert(state.language==='de'?'Gespeichert':(state.language==='pl'?'Zapisano':'Saved'));
     }
   }
