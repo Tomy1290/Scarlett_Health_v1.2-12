@@ -138,6 +138,8 @@ export default function SettingsScreen() {
       Alert.alert(state.language==='de'?'Gespeichert':(state.language==='pl'?'Zapisano':'Saved'));
     }
   }
+
+  async function seedDefaults() {
     console.log('🌱 Creating default reminders...');
     
     const initialized = await initializeNotifications();
