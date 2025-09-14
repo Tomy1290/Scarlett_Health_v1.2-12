@@ -19,8 +19,9 @@ export default function RootLayout() {
       const initialized = await initializeNotifications();
       if (initialized) {
         const state = useAppStore.getState();
+        await cancelAllNotifications(); // safety: clear any legacy schedules
         await scheduleCycleNotifications(state);
-        setupDailyAutoReschedule(); // don't schedule all at startup; reschedule after firing
+        // Do NOT schedule reminders at startup. They get scheduled by user actions only.
       }
     })();
   }, []);
