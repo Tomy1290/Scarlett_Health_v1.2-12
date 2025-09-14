@@ -12,7 +12,8 @@ from datetime import datetime
 
 # LLM Integrations (Emergent)
 try:
-    from emergentintegrations import llm_client
+    from emergentintegrations.llm.chat import LlmChat
+    llm_client = LlmChat()
 except Exception:  # pragma: no cover – fallback if lib not present
     llm_client = None
 
