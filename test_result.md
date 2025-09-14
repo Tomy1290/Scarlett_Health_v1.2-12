@@ -273,6 +273,20 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ MOBILE E2E PASSED - Saved messages page fully functional. Tips from chat appear correctly. CRUD operations work: Create (title, category, tags, text), Read (list with filters), Delete (trash icon). Category filtering works. Mobile responsive."
+  - task: "HyperOS Device Detection for Notifications"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/utils/notifications.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to implement HyperOS-specific device detection for conditional notification triggers"
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTED: Enhanced scheduleDailyNext() with conditional logic - HyperOS/MIUI devices now use seconds triggers with 60sec minimum delay, other devices use standard date triggers. Added detailed logging for both paths."
 metadata:
   created_by: "main_agent"
   version: "1.0"
