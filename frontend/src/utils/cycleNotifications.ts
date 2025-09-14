@@ -323,7 +323,7 @@ export async function scheduleCycleNotifications(state: AppState): Promise<void>
     }
     
     // Store the new notifications
-    storeCycleNotifications(newNotifications);
+    await storeCycleNotifications(newNotifications);
     
     console.log(`✅ Scheduled ${newNotifications.length} cycle notifications`);
   } catch (error) {
