@@ -54,6 +54,7 @@ export async function testCloudConnection(): Promise<boolean> {
  * Call OpenAI API directly using Emergent LLM Key
  */
 export async function callCloudLLM(request: CloudChatRequest): Promise<string> {
+  const EMERGENT_LLM_KEY = getEmergentLLMKey();
   if (!EMERGENT_LLM_KEY) {
     throw new Error('No Emergent LLM Key available');
   }
