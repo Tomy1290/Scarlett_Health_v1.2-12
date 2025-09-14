@@ -94,15 +94,28 @@ export async function scheduleDailyNext(
   try {
     const when = computeNextOccurrence(hour, minute);
     const now = new Date();
-    let diffSec = Math.ceil((+when - +now) / 1000);
-    if (diffSec < 60) diffSec = 60; // mindestens 60 Sekunden in die Zukunft
-    const nid = await Notifications.scheduleNotificationAsync({
-      content: { title, body, sound: true, ...(Platform.OS === 'android' && { channelId: channel }) },
-      trigger: { seconds: diffSec },
-    });
-    try { console.log(`⏲️ [DailyNext] in ${diffSec}s (${when.toLocaleString()})`); } catch {}
-    logNotificationPlanned('DailyNext', title, when);
-    return nid;
+    
+    // HyperOS/MIUI devices have issues with date triggers - use seconds instead
+    if (isHyperOSLike()) {
+      let diffSec = Math.ceil((+when - +now) / 1000);
+      if (diffSec < 60) diffSec = 60; // mindestens 60 Sekunden in die Zukunft
+      const nid = await Notifications.scheduleNotificationAsync({
+        content: { title, body, sound: true, ...(Platform.OS === 'android' && { channelId: channel }) },
+        trigger: { seconds: diffSec },
+      });
+      try { console.log(`⏲️ [DailyNext-HyperOS] in ${diffSec}s (${when.toLocaleString()})`); } catch {}
+      logNotificationPlanned('DailyNext-HyperOS', title, when);
+      return nid;
+    } else {
+      // Normal devices can use date triggers
+      const nid = await Notifications.scheduleNotificationAsync({
+        content: { title, body, sound: true },
+        trigger: { date: when, channelId: channel },
+      });
+      try { console.log(`⏲️ [DailyNext-Standard] at ${when.toLocaleString()}`); } catch {}
+      logNotificationPlanned('DailyNext-Standard', title, when);
+      return nid;
+    }
   } catch (e) { console.error('❌ scheduleDailyNext error:', e); return null; }
 }
 
