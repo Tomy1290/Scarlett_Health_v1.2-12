@@ -24,7 +24,7 @@ const CYCLE_NOTIFICATION_STORAGE_KEY = 'cycleNotifications';
  */
 async function getStoredCycleNotifications(): Promise<CycleNotification[]> {
   try {
-    const stored = await AsyncStorage.getItem(CYCLE_NOTIFICATION_STORAGE_KEY);
+    const stored = storage.getString(CYCLE_NOTIFICATION_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -36,7 +36,7 @@ async function getStoredCycleNotifications(): Promise<CycleNotification[]> {
  */
 async function storeCycleNotifications(notifications: CycleNotification[]): Promise<void> {
   try {
-    await AsyncStorage.setItem(CYCLE_NOTIFICATION_STORAGE_KEY, JSON.stringify(notifications));
+    storage.set(CYCLE_NOTIFICATION_STORAGE_KEY, JSON.stringify(notifications));
   } catch (error) {
     console.error('❌ Error storing cycle notifications:', error);
   }
