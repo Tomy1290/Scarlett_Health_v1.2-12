@@ -277,7 +277,13 @@ def main():
     # Test 3: GET /api/status
     results['get_status'] = test_get_status()
     
-    # Test 4: MongoDB connection (implicit through POST/GET)
+    # Test 4: POST /api/chat (Greeting Mode)
+    results['post_chat_greeting'] = test_post_chat()
+    
+    # Test 5: POST /api/chat (Chat Mode with Messages)
+    results['post_chat_messages'] = test_post_chat_with_messages()
+    
+    # Test 6: MongoDB connection (implicit through POST/GET)
     results['mongodb_connection'] = results['post_status'] and results['get_status']
     
     # Summary
