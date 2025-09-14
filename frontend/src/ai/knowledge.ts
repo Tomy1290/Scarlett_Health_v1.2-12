@@ -91,21 +91,68 @@ export function answerReminders(state: AppState) {
   );
 }
 
+// Cache previous responses to avoid repetition
+const responseCache = new Map<string, { response: string; timestamp: number }>();
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+function getCacheKey(state: AppState, q: string): string {
+  return `${state.language}_${q.toLowerCase().replace(/\s+/g, '_')}`;
+}
+
+function getVariedResponse(responses: string[], cacheKey: string): string {
+  const cached = responseCache.get(cacheKey);
+  const now = Date.now();
+  
+  // If cached and still fresh, get next variation
+  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    const currentIndex = responses.indexOf(cached.response);
+    const nextIndex = (currentIndex + 1) % responses.length;
+    const response = responses[nextIndex];
+    responseCache.set(cacheKey, { response, timestamp: now });
+    return response;
+  }
+  
+  // Return first response and cache it
+  const response = responses[0];
+  responseCache.set(cacheKey, { response, timestamp: now });
+  return response;
+}
+
 export function answerKnowledge(state: AppState, q: string) {
   const s = q.toLowerCase();
+  const cacheKey = getCacheKey(state, q);
   
-  // Spezifische Zyklus-Fragen
+  // Spezifische Zyklus-Fragen with variations
   if (/(fruchtbar|fertile|eisprung|ovul)/i.test(q)) {
-    return cycleFertileWindow(state);
+    const responses = [
+      cycleFertileWindow(state),
+      cycleFertileWindow(state) + '\n\n💡 ' + (state.language === 'de' ? 'Tipp: Beobachte auch andere Anzeichen wie Körpertemperatur.' : state.language === 'pl' ? 'Wskazówka: Obserwuj też inne oznaki jak temperatura ciała.' : 'Tip: Also watch for other signs like body temperature.')
+    ];
+    return getVariedResponse(responses, cacheKey);
   }
+  
   if (/(schmerz|kramp|cramp|kopfschmerz|übelsch|nausea)/i.test(q)) {
-    return cyclePainManagement(state);
+    const responses = [
+      cyclePainManagement(state),
+      cyclePainManagement(state) + '\n\n' + (state.language === 'de' ? '🌿 Zusätzlich können Kräutertees (Kamille, Frauenmantel) helfen.' : state.language === 'pl' ? '🌿 Dodatkowo mogą pomóc herbatki ziołowe (rumianek, przywrotnik).' : '🌿 Additionally, herbal teas (chamomile, lady\'s mantle) may help.')
+    ];
+    return getVariedResponse(responses, cacheKey);
   }
+  
   if (/(energie|energy|schlaf|sleep|müde|tired)/i.test(q)) {
-    return cycleEnergySleep(state);
+    const responses = [
+      cycleEnergySleep(state),
+      cycleEnergySleep(state) + '\n\n' + (state.language === 'de' ? '⚡ Auch leichte Bewegung am Morgen kann Energie steigern.' : state.language === 'pl' ? '⚡ Lekki ruch rano też może zwiększyć energię.' : '⚡ Light morning movement can also boost energy.')
+    ];
+    return getVariedResponse(responses, cacheKey);
   }
+  
   if (/(pms|periode|period|menstruation|blut)/i.test(q)) {
-    return answerCycle(state);
+    const responses = [
+      answerCycle(state),
+      answerCycle(state) + '\n\n' + (state.language === 'de' ? '📊 In der App kannst du Symptome verfolgen, um Muster zu erkennen.' : state.language === 'pl' ? '📊 W aplikacji możesz śledzić objawy, aby rozpoznać wzorce.' : '📊 In the app you can track symptoms to recognize patterns.')
+    ];
+    return getVariedResponse(responses, cacheKey);
   }
   
   // Allgemeine Zyklus-Fragen - nur Basis-Info
@@ -113,20 +160,39 @@ export function answerKnowledge(state: AppState, q: string) {
     return answerCycle(state);
   }
   
-  // Spezifische Gewichts-Fragen
+  // Spezifische Gewichts-Fragen with variations
   if (/(plateau|stagnation|stillstand)/i.test(q)) {
-    return weightPlateauStrategies(state);
+    const responses = [
+      weightPlateauStrategies(state),
+      weightPlateauStrategies(state) + '\n\n' + (state.language === 'de' ? '🎯 Geduld ist wichtig - Plateaus sind Teil des Prozesses.' : state.language === 'pl' ? '🎯 Cierpliwość jest ważna - plateau to część procesu.' : '🎯 Patience is key - plateaus are part of the process.')
+    ];
+    return getVariedResponse(responses, cacheKey);
   }
+  
   if (/(wasser|hydration|trinken|dehydr)/i.test(q)) {
-    return hydrationWeightRelation(state);
+    const responses = [
+      hydrationWeightRelation(state),
+      hydrationWeightRelation(state) + '\n\n' + (state.language === 'de' ? '💧 Versuche, alle 2 Stunden ein Glas zu trinken.' : state.language === 'pl' ? '💧 Spróbuj pić szklankę co 2 godziny.' : '💧 Try to drink a glass every 2 hours.')
+    ];
+    return getVariedResponse(responses, cacheKey);
   }
+  
   if (/(abnehmen|lose.*weight|diät)/i.test(q)) {
-    return [answerWeight(state), weightPlateauStrategies(state)].join('\n\n');
+    const responses = [
+      [answerWeight(state), weightPlateauStrategies(state)].join('\n\n'),
+      [answerWeight(state), hydrationWeightRelation(state)].join('\n\n'),
+      [answerWeight(state), weightSleepImpact(state)].join('\n\n')
+    ];
+    return getVariedResponse(responses, cacheKey);
   }
   
   // Allgemeine Gewichts-Fragen
   if (/(gewicht|weight|waga|masa)/i.test(q)) {
-    return answerWeight(state);
+    const responses = [
+      answerWeight(state),
+      answerWeight(state) + '\n\n' + (state.language === 'de' ? '📈 Fokussiere dich auf langfristige Trends, nicht tägliche Schwankungen.' : state.language === 'pl' ? '📈 Skup się na długoterminowych trendach, nie codziennych wahaniach.' : '📈 Focus on long-term trends, not daily fluctuations.')
+    ];
+    return getVariedResponse(responses, cacheKey);
   }
   
   if (/(erinnerung|reminder|benachrichtigung)/i.test(q)) {
