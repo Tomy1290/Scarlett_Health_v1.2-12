@@ -69,21 +69,62 @@ export default function SettingsScreen() {
   }, [state.reminders]);
 
   async function seedDefaults() {
-    await ensureNotificationPermissions();
-    await ensureAndroidChannel();
-    const defaults = [
-      { id: 'pill_morning', type: 'pills_morning', title: state.language==='de'?'Tabletten morgens':(state.language==='pl'?'Tabletki rano':'Pills morning'), body: state.language==='de'?'Bitte Tabletten einnehmen.':(state.language==='pl'?'Proszę przyjąć tabletki.':'Please take your pills.'), time: '08:00' },
-      { id: 'pill_evening', type: 'pills_evening', title: state.language==='de'?'Tabletten abends':(state.language==='pl'?'Tabletki wieczorem':'Pills evening'), body: state.language==='de'?'Bitte Tabletten einnehmen.':(state.language==='pl'?'Proszę przyjąć tabletki.':'Please take your pills.'), time: '20:00' },
-      { id: 'weight_morning', type: 'weight', title: state.language==='de'?'Gewicht':(state.language==='pl'?'Waga':'Weight'), body: state.language==='de'?'Gewicht morgens eintragen.':(state.language==='pl'?'Zapisz wagę rano.':'Log weight in the morning.'), time: '07:00' },
-      { id: 'water_daily', type: 'water', title: state.language==='de'?'Wasser':(state.language==='pl'?'Woda':'Water'), body: state.language==='de'?'Ein Glas Wasser trinken.':(state.language==='pl'?'Wypij szklankę wody.':'Have a glass of water.'), time: '10:00' },
-      { id: 'sport_daily', type: 'sport', title: state.language==='de'?'Sport':(state.language==='pl'?'Sport':'Sport'), body: state.language==='de'?'Zeit für Sport.':(state.language==='pl'?'Czas na sport.':'Time for sport.'), time: '16:00' },
-    ];
-    for (const def of defaults) {
-      const notifId = await scheduleDailyReminder(def.id, def.title, def.body, def.time, def.type === 'pills_morning' || def.type === 'pills_evening');
-      state.addReminder({ id: def.id, type: def.type, time: def.time, enabled: true });
-      state.setNotificationMeta(def.id, { id: notifId || '', time: def.time });
+    console.log('🌱 Creating default reminders...');
+    
+    const initialized = await initializeNotifications();
+    if (!initialized) {
+      Alert.alert('Fehler', 'Benachrichtigungen konnten nicht initialisiert werden.');
+      return;
     }
-    Alert.alert(state.language==='de'?'Erledigt':(state.language==='pl'?'Gotowe':'Done'), state.language==='de'?'Standard-Erinnerungen aktiviert.':(state.language==='pl'?'Domyślne przypomnienia włączone.':'Default reminders enabled.'));
+
+    const defaults = [
+      { id: 'pill_morning', type: 'pills_morning', title: state.language==='de'?'Tabletten morgens':(state.language==='pl'?'Tabletki rano':'Pills morning'), body: state.language==='de'?'Bitte Tabletten einnehmen.':(state.language==='pl'?'Proszę przyjąć tabletki.':'Please take your pills.'), hour: 8, minute: 0 },
+      { id: 'pill_evening', type: 'pills_evening', title: state.language==='de'?'Tabletten abends':(state.language==='pl'?'Tabletki wieczorem':'Pills evening'), body: state.language==='de'?'Bitte Tabletten einnehmen.':(state.language==='pl'?'Proszę przyjąć tabletki.':'Please take your pills.'), hour: 20, minute: 0 },
+      { id: 'weight_morning', type: 'weight', title: state.language==='de'?'Gewicht':(state.language==='pl'?'Waga':'Weight'), body: state.language==='de'?'Gewicht morgens eintragen.':(state.language==='pl'?'Zapisz wagę rano.':'Log weight in the morning.'), hour: 7, minute: 0 },
+      { id: 'water_daily', type: 'water', title: state.language==='de'?'Wasser':(state.language==='pl'?'Woda':'Water'), body: state.language==='de'?'Ein Glas Wasser trinken.':(state.language==='pl'?'Wypij szklankę wody.':'Have a glass of water.'), hour: 10, minute: 0 },
+      { id: 'sport_daily', type: 'sport', title: state.language==='de'?'Sport':(state.language==='pl'?'Sport':'Sport'), body: state.language==='de'?'Zeit für Sport.':(state.language==='pl'?'Czas na sport.':'Time for sport.'), hour: 16, minute: 0 },
+    ];
+
+    for (const def of defaults) {
+      console.log(`📅 Scheduling ${def.id} for ${def.hour}:${def.minute.toString().padStart(2, '0')}`);
+      
+      const notifId = await scheduleDailyReminder(
+        def.id, 
+        def.title, 
+        def.body, 
+        def.hour, 
+        def.minute,
+        'reminders'
+      );
+
+      if (notifId) {
+        const timeString = `${def.hour.toString().padStart(2, '0')}:${def.minute.toString().padStart(2, '0')}`;
+        state.addReminder({ 
+          id: def.id, 
+          type: def.type, 
+          time: timeString, 
+          enabled: true 
+        });
+        state.setNotificationMeta(def.id, { 
+          id: notifId, 
+          time: timeString 
+        });
+        
+        // Update local state
+        const date = new Date();
+        date.setHours(def.hour, def.minute, 0, 0);
+        setReminderTimes(prev => ({ ...prev, [def.id]: date }));
+        
+        console.log(`✅ Created reminder ${def.id} with notification ID: ${notifId}`);
+      } else {
+        console.error(`❌ Failed to create reminder: ${def.id}`);
+      }
+    }
+    
+    Alert.alert(
+      state.language==='de'?'Erledigt':(state.language==='pl'?'Gotowe':'Done'), 
+      state.language==='de'?'Standard-Erinnerungen aktiviert.':(state.language==='pl'?'Domyślne przypomnienia włączone.':'Default reminders enabled.')
+    );
   }
 
   async function toggleReminder(id: string, enabled: boolean) {
