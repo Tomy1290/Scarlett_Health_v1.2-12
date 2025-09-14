@@ -5,7 +5,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAppStore, useLevel } from "../src/store/useStore";
 import { useRouter } from "expo-router";
 import * as Haptics from 'expo-haptics';
-import { getWeekRange } from "../src/gamification/events";
 import { computeChains } from "../src/gamification/chains";
 import { EVENTS, getWeekRange } from "../src/gamification/events";
 import { toKey } from "../src/utils/date";
