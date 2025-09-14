@@ -192,7 +192,9 @@ export default function Home() {
         <View style={[styles.card, { backgroundColor: colors.card }]}> 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ color: colors.text, fontWeight: '700' }}>{t('Getränke & Sport', 'Drinks & Sport', 'Napoje i sport')}</Text>
+              <Ionicons name='water' size={18} color={colors.primary} />
+              <Ionicons name='barbell' size={18} color={colors.primary} style={{ marginLeft: 8 }} />
+              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{t('Getränke & Sport', 'Drinks & Sport', 'Napoje i sport')}</Text>
             </View>
             <TouchableOpacity onPress={() => toggleHelp('drinks')}>
               <Ionicons name='information-circle-outline' size={18} color={colors.muted} />
@@ -312,7 +314,7 @@ export default function Home() {
             ) : (
               <TouchableOpacity onPress={() => { state.startCycle(currentDate); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }} style={[styles.cta, { backgroundColor: colors.primary }]}>
                 <Ionicons name='play' size={16} color={'#fff'} />
-                <Text style={{ color: '#fff', marginLeft: 6 }}>{language==='de'?'Zyklus Beginn':(language==='pl'?'Start cyklu':'Start cycle')}</Text>
+                <Text style={{ color: '#fff', marginLeft: 6 }}>{language==='de'?'Beginn Periode':(language==='pl'?'Start cyklu':'Start cycle')}</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity onPress={() => router.push('/cycle')} style={[styles.cta, { borderColor: colors.primary, borderWidth: 1 }]}>
@@ -363,6 +365,7 @@ export default function Home() {
           ) : weeklyEvent ? (
             <View style={{ marginTop: 6 }}>
               <Text style={{ color: colors.text }}>{weeklyEvent.title(language === 'en' ? 'en' : 'de')}</Text>
+              <Text style={{ color: colors.muted, marginTop: 4 }}>{weeklyEvent.description(language === 'en' ? 'en' : 'de')}</Text>
               <View style={{ height: 6, backgroundColor: colors.bg, borderRadius: 3, overflow: 'hidden', marginTop: 6 }}>
                 <View style={{ width: `${Math.round(evProg.percent || 0)}%`, height: 6, backgroundColor: evProg.completed ? '#2bb673' : colors.primary }} />
               </View>
@@ -374,7 +377,7 @@ export default function Home() {
         </View>
 
         {/* Rewards */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="gift" size={20} color={colors.primary} />

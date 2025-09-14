@@ -43,12 +43,13 @@ export function predictNextStart(cycles: Cycle[]): Date | null {
   return dt;
 }
 
-// Typical model: ovulation occurs ~14 days before next period. Fertile window = ovulation -5 .. ovulation -1
+// Luteal phase defaults to 14 days (typical range 12–16). Fertile window includes ovulation day.
 export function getOvulationDate(cycles: Cycle[]): Date | null {
   const next = predictNextStart(cycles);
   if (!next) return null;
+  const luteal = 14; // could be adapted later by user-specific data
   const ov = new Date(next);
-  ov.setDate(ov.getDate() - 14);
+  ov.setDate(ov.getDate() - luteal);
   return ov;
 }
 
@@ -57,8 +58,7 @@ export function getFertileWindow(cycles: Cycle[]): { start: Date; end: Date } | 
   if (!ov) return null;
   const start = new Date(ov);
   start.setDate(start.getDate() - 5);
-  const end = new Date(ov);
-  end.setDate(end.getDate() - 1);
+  const end = new Date(ov); // include ovulation day as fertile
   return { start, end };
 }
 

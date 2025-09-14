@@ -119,6 +119,7 @@ export async function initializeNotifications(): Promise<boolean> {
 
 /**
  * Schedule a daily reminder
+ * Guard against immediate fire by always scheduling at second=0
  */
 export async function scheduleDailyReminder(
   id: string,
@@ -130,7 +131,11 @@ export async function scheduleDailyReminder(
 ): Promise<string | null> {
   try {
     console.log(`📅 Scheduling daily reminder: ${id} at ${hour}:${minute}`);
-    
+
+    // Normalize bounds
+    const h = Math.max(0, Math.min(23, Math.floor(hour)));
+    const m = Math.max(0, Math.min(59, Math.floor(minute)));
+
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title,
@@ -140,8 +145,9 @@ export async function scheduleDailyReminder(
         ...(Platform.OS === 'android' && { channelId: channel }),
       },
       trigger: {
-        hour,
-        minute,
+        hour: h,
+        minute: m,
+        second: 0,
         repeats: true,
       },
     });
@@ -266,8 +272,8 @@ export async function testNotification(): Promise<void> {
       Alert.alert('Fehler', 'Test-Benachrichtigung konnte nicht geplant werden');
     }
   } catch (error) {
-    console.error('❌ Error testing notifications:', error);
-    Alert.alert('Fehler', `Test fehlgeschlagen: ${error.message}`);
+    console.error('❌ Error testing notifications:', (error as any)?.message || error);
+    Alert.alert('Fehler', `Test fehlgeschlagen: ${(error as any)?.message || error}`);
   }
 }
 
