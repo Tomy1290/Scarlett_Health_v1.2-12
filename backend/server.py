@@ -107,8 +107,9 @@ async def _call_llm(messages: List[Dict[str,str]], model: str) -> str:
         # Get the user message (last message in the conversation)
         user_message = messages[-1].get('content', '') if messages else ''
         
-        # Use the LlmChat send_message method
-        resp = llm_client.with_model(model).send_message(user_message)
+        # Set the model and use the async send_message method
+        llm_client.model = model
+        resp = await llm_client.send_message(user_message)
         
         # Extract content from response
         if hasattr(resp, 'content') and resp.content:
