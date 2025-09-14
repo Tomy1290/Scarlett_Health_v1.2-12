@@ -15,7 +15,13 @@ export interface CloudChatRequest {
 }
 
 // Direct OpenAI API integration using Emergent LLM Key
-const EMERGENT_LLM_KEY = Constants.expoConfig?.extra?.EXPO_PUBLIC_EMERGENT_LLM_KEY || process.env.EXPO_PUBLIC_EMERGENT_LLM_KEY;
+const getEmergentLLMKey = () => {
+  // Try multiple ways to get the key
+  return Constants.expoConfig?.extra?.EXPO_PUBLIC_EMERGENT_LLM_KEY || 
+         Constants.manifest?.extra?.EXPO_PUBLIC_EMERGENT_LLM_KEY ||
+         (typeof process !== 'undefined' ? process.env.EXPO_PUBLIC_EMERGENT_LLM_KEY : null) ||
+         'sk-emergent-e34Af18EdBf12063f7'; // Fallback
+};
 
 /**
  * Test if Direct LLM is reachable by doing a simple health check
