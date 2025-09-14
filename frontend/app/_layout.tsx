@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Image, View, Text } from 'react-native';
-import { initializeNotifications, setupDailyAutoReschedule } from '../src/utils/notifications';
+import { initializeNotifications, cancelAllNotifications } from '../src/utils/notifications';
 import { scheduleCycleNotifications } from '../src/utils/cycleNotifications';
 import { useAppStore } from "../src/store/useStore";
 
