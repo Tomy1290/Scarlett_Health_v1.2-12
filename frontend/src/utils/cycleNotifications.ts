@@ -1,13 +1,10 @@
 import { AppState } from '../store/useStore';
 import { scheduleOneTimeNotification, cancelNotification } from './notifications';
-import { predictNextPeriod, calculateFertileWindow } from './cycle';
+import { predictNextStart, getFertileWindow, getOvulationDate } from './cycle';
 import { storage } from './storage';
 
 /**
- * AUTOMATIC CYCLE NOTIFICATIONS
- * - Period predictions
- * - Ovulation/fertile window alerts
- * - Cycle health reminders
+ * AUTOMATIC CYCLE NOTIFICATIONS (fixed to match current cycle utils)
  */
 
 interface CycleNotification {
@@ -19,9 +16,6 @@ interface CycleNotification {
 
 const CYCLE_NOTIFICATION_STORAGE_KEY = 'cycleNotifications';
 
-/**
- * Get stored cycle notifications
- */
 function getStoredCycleNotifications(): CycleNotification[] {
   try {
     const stored = storage.getString(CYCLE_NOTIFICATION_STORAGE_KEY);
@@ -31,9 +25,6 @@ function getStoredCycleNotifications(): CycleNotification[] {
   }
 }
 
-/**
- * Store cycle notifications
- */
 function storeCycleNotifications(notifications: CycleNotification[]): void {
   try {
     storage.set(CYCLE_NOTIFICATION_STORAGE_KEY, JSON.stringify(notifications));
@@ -42,299 +33,99 @@ function storeCycleNotifications(notifications: CycleNotification[]): void {
   }
 }
 
-/**
- * Cancel all existing cycle notifications
- */
-async function cancelExistingCycleNotifications(): Promise<void> {
+async function cancelExistingCycleNotifications(): Promise&lt;void&gt; {
   const existing = getStoredCycleNotifications();
-  
-  for (const notification of existing) {
-    if (notification.notificationId) {
-      await cancelNotification(notification.notificationId);
-    }
+  for (const n of existing) {
+    if (n.notificationId) await cancelNotification(n.notificationId);
   }
-  
-  // Clear storage
   storeCycleNotifications([]);
   console.log('🗑️ Cancelled all existing cycle notifications');
 }
 
-/**
- * Get notification texts based on language
- */
-function getNotificationTexts(type: string, language: string) {
-  const texts: Record<string, Record<string, { title: string; body: string }>> = {
-    period_today: {
-      de: {
-        title: '🩸 Periode heute erwartet',
-        body: 'Deine Periode sollte heute beginnen. Vergiss nicht, sie zu tracken!'
-      },
-      en: {
-        title: '🩸 Period expected today',
-        body: 'Your period should start today. Don\'t forget to track it!'
-      },
-      pl: {
-        title: '🩸 Okres oczekiwany dzisiaj',
-        body: 'Twój okres powinien się dzisiaj rozpocząć. Nie zapomnij go śledzić!'
-      }
-    },
-    period_tomorrow: {
-      de: {
-        title: '🩸 Periode morgen erwartet',
-        body: 'Deine Periode beginnt wahrscheinlich morgen. Bereite dich vor!'
-      },
-      en: {
-        title: '🩸 Period expected tomorrow',
-        body: 'Your period will likely start tomorrow. Get prepared!'
-      },
-      pl: {
-        title: '🩸 Okres oczekiwany jutro',
-        body: 'Twój okres prawdopodobnie zacznie się jutro. Przygotuj się!'
-      }
-    },
-    fertile_start: {
-      de: {
-        title: '🌸 Fruchtbare Phase beginnt',
-        body: 'Deine fruchtbare Phase beginnt heute. Zeit für besondere Aufmerksamkeit!'
-      },
-      en: {
-        title: '🌸 Fertile window begins',
-        body: 'Your fertile window starts today. Time for special attention!'
-      },
-      pl: {
-        title: '🌸 Rozpoczyna się okno płodności',
-        body: 'Twoje okno płodności zaczyna się dzisiaj. Czas na szczególną uwagę!'
-      }
-    },
-    ovulation: {
-      de: {
-        title: '🥚 Eisprung heute',
-        body: 'Heute ist dein voraussichtlicher Eisprung. Höchste Fruchtbarkeit!'
-      },
-      en: {
-        title: '🥚 Ovulation today',
-        body: 'Today is your expected ovulation day. Peak fertility!'
-      },
-      pl: {
-        title: '🥚 Owulacja dzisiaj',
-        body: 'Dzisiaj jest twój przewidywany dzień owulacji. Szczyt płodności!'
-      }
-    },
-    fertile_end: {
-      de: {
-        title: '🌸 Fruchtbare Phase endet',
-        body: 'Deine fruchtbare Phase endet heute. Die nächste Periode ist in etwa 2 Wochen zu erwarten.'
-      },
-      en: {
-        title: '🌸 Fertile window ending',
-        body: 'Your fertile window ends today. Next period expected in about 2 weeks.'
-      },
-      pl: {
-        title: '🌸 Koniec okna płodności',
-        body: 'Twoje okno płodności kończy się dzisiaj. Następny okres oczekiwany za około 2 tygodnie.'
-      }
-    },
-    health_check: {
-      de: {
-        title: '💝 Zyklus-Gesundheitscheck',
-        body: 'Zeit für deinen wöchentlichen Gesundheitscheck. Wie fühlst du dich heute?'
-      },
-      en: {
-        title: '💝 Cycle health check',
-        body: 'Time for your weekly health check. How are you feeling today?'
-      },
-      pl: {
-        title: '💝 Kontrola zdrowia cyklu',
-        body: 'Czas na cotygodniową kontrolę zdrowia. Jak się dzisiaj czujesz?'
-      }
-    }
+function t(lang: string, key: string) {
+  const texts: any = {
+    period_today: { de: ['🩸 Periode heute erwartet', 'Deine Periode sollte heute beginnen. Vergiss nicht, sie zu tracken!'], en: ['🩸 Period expected today', "Your period should start today. Don't forget to track it!"], pl: ['🩸 Okres oczekiwany dzisiaj', 'Twój okres powinien się dzisiaj rozpocząć. Nie zapomnij go śledzić!'] },
+    period_tomorrow: { de: ['🩸 Periode morgen erwartet', 'Deine Periode beginnt wahrscheinlich morgen. Bereite dich vor!'], en: ['🩸 Period expected tomorrow', 'Your period will likely start tomorrow. Get prepared!'], pl: ['🩸 Okres oczekiwany jutro', 'Twój okres prawdopodobnie zacznie się jutro. Przygotuj się!'] },
+    fertile_start: { de: ['🌸 Fruchtbare Phase beginnt', 'Deine fruchtbare Phase beginnt heute. Zeit für besondere Aufmerksamkeit!'], en: ['🌸 Fertile window begins', 'Your fertile window starts today. Time for special attention!'], pl: ['🌸 Rozpoczyna się okno płodności', 'Twoje okno płodności zaczyna się dzisiaj. Czas na szczególną uwagę!'] },
+    ovulation: { de: ['🥚 Eisprung heute', 'Heute ist dein voraussichtlicher Eisprung. Höchste Fruchtbarkeit!'], en: ['🥚 Ovulation today', 'Today is your expected ovulation day. Peak fertility!'], pl: ['🥚 Owulacja dzisiaj', 'Dzisiaj jest twój przewidywany dzień owulacji. Szczyt płodności!'] },
+    fertile_end: { de: ['🌸 Fruchtbare Phase endet', 'Deine fruchtbare Phase endet heute. Die nächste Periode ist in etwa 2 Wochen zu erwarten.'], en: ['🌸 Fertile window ending', 'Your fertile window ends today. Next period expected in about 2 weeks.'], pl: ['🌸 Koniec okna płodności', 'Twoje okno płodności kończy się dzisiaj. Następny okres oczekiwany za około 2 tygodnie.'] },
+    health_check: { de: ['💝 Zyklus-Gesundheitscheck', 'Zeit für deinen wöchentlichen Gesundheitscheck. Wie fühlst du dich heute?'], en: ['💝 Cycle health check', 'Time for your weekly health check. How are you feeling today?'], pl: ['💝 Kontrola zdrowia cyklu', 'Czas na cotygodniową kontrolę zdrowia. Jak się dzisiaj czujesz?'] },
   };
-
-  const lang = language === 'pl' ? 'pl' : (language === 'en' ? 'en' : 'de');
-  return texts[type]?.[lang] || texts[type]?.de || { title: 'Erinnerung', body: 'Gesundheits-Erinnerung' };
+  const langKey = lang === 'pl' ? 'pl' : (lang === 'en' ? 'en' : 'de');
+  return texts[key]?.[langKey] || ['Erinnerung', ''];
 }
 
-/**
- * Schedule cycle notifications based on current cycle data
- */
-export async function scheduleCycleNotifications(state: AppState): Promise<void> {
+export async function scheduleCycleNotifications(state: AppState): Promise&lt;void&gt; {
   try {
     console.log('📅 Scheduling automatic cycle notifications...');
-    
-    // Cancel existing notifications first
     await cancelExistingCycleNotifications();
-    
+
     if (!state.cycles || state.cycles.length === 0) {
       console.log('⚠️ No cycle data available, skipping cycle notifications');
       return;
     }
-    
+
     const language = state.language || 'de';
-    const newNotifications: CycleNotification[] = [];
-    
-    // Get the most recent cycle data
-    const latestCycle = state.cycles[state.cycles.length - 1];
-    const nextPeriod = predictNextPeriod(state.cycles);
-    
-    if (nextPeriod) {
-      // Schedule period notifications
-      const periodDate = new Date(nextPeriod.expectedDate);
-      
-      // Period today notification
-      const periodTodayTexts = getNotificationTexts('period_today', language);
-      const periodTodayId = await scheduleOneTimeNotification(
-        periodTodayTexts.title,
-        periodTodayTexts.body,
-        periodDate,
-        'cycle'
-      );
-      
-      if (periodTodayId) {
-        newNotifications.push({
-          id: `period_today_${Date.now()}`,
-          type: 'period',
-          notificationId: periodTodayId,
-          scheduledDate: periodDate
-        });
+    const out: CycleNotification[] = [];
+
+    const next = predictNextStart(state.cycles);
+    if (next) {
+      const periodDay = new Date(next.getFullYear(), next.getMonth(), next.getDate(), 9, 0, 0);
+      if (periodDay &gt; new Date()) {
+        const [title, body] = t(language, 'period_today');
+        const id = await scheduleOneTimeNotification(title, body, periodDay, 'cycle');
+        if (id) out.push({ id: `period_today_${Date.now()}`, type: 'period', notificationId: id, scheduledDate: periodDay });
       }
-      
-      // Period tomorrow notification (day before)
-      const periodTomorrowDate = new Date(periodDate);
-      periodTomorrowDate.setDate(periodTomorrowDate.getDate() - 1);
-      periodTomorrowDate.setHours(20, 0, 0, 0); // 8 PM the day before
-      
-      if (periodTomorrowDate > new Date()) {
-        const periodTomorrowTexts = getNotificationTexts('period_tomorrow', language);
-        const periodTomorrowId = await scheduleOneTimeNotification(
-          periodTomorrowTexts.title,
-          periodTomorrowTexts.body,
-          periodTomorrowDate,
-          'cycle'
-        );
-        
-        if (periodTomorrowId) {
-          newNotifications.push({
-            id: `period_tomorrow_${Date.now()}`,
-            type: 'period',
-            notificationId: periodTomorrowId,
-            scheduledDate: periodTomorrowDate
-          });
-        }
+      const periodPrev = new Date(next.getFullYear(), next.getMonth(), next.getDate()-1, 20, 0, 0);
+      if (periodPrev &gt; new Date()) {
+        const [title, body] = t(language, 'period_tomorrow');
+        const id = await scheduleOneTimeNotification(title, body, periodPrev, 'cycle');
+        if (id) out.push({ id: `period_tomorrow_${Date.now()}`, type: 'period', notificationId: id, scheduledDate: periodPrev });
       }
     }
-    
-    // Calculate fertile window and ovulation
-    if (latestCycle && latestCycle.startDate) {
-      const cycleStartDate = new Date(latestCycle.startDate);
-      const fertileWindow = calculateFertileWindow(cycleStartDate, latestCycle.length || 28);
-      
-      if (fertileWindow) {
-        // Fertile window start
-        const fertileStartDate = new Date(fertileWindow.start);
-        fertileStartDate.setHours(9, 0, 0, 0); // 9 AM
-        
-        if (fertileStartDate > new Date()) {
-          const fertileStartTexts = getNotificationTexts('fertile_start', language);
-          const fertileStartId = await scheduleOneTimeNotification(
-            fertileStartTexts.title,
-            fertileStartTexts.body,
-            fertileStartDate,
-            'cycle'
-          );
-          
-          if (fertileStartId) {
-            newNotifications.push({
-              id: `fertile_start_${Date.now()}`,
-              type: 'fertile_start',
-              notificationId: fertileStartId,
-              scheduledDate: fertileStartDate
-            });
-          }
-        }
-        
-        // Ovulation day
-        const ovulationDate = new Date(fertileWindow.ovulation);
-        ovulationDate.setHours(10, 0, 0, 0); // 10 AM
-        
-        if (ovulationDate > new Date()) {
-          const ovulationTexts = getNotificationTexts('ovulation', language);
-          const ovulationId = await scheduleOneTimeNotification(
-            ovulationTexts.title,
-            ovulationTexts.body,
-            ovulationDate,
-            'cycle'
-          );
-          
-          if (ovulationId) {
-            newNotifications.push({
-              id: `ovulation_${Date.now()}`,
-              type: 'ovulation',
-              notificationId: ovulationId,
-              scheduledDate: ovulationDate
-            });
-          }
-        }
-        
-        // Fertile window end
-        const fertileEndDate = new Date(fertileWindow.end);
-        fertileEndDate.setHours(18, 0, 0, 0); // 6 PM
-        
-        if (fertileEndDate > new Date()) {
-          const fertileEndTexts = getNotificationTexts('fertile_end', language);
-          const fertileEndId = await scheduleOneTimeNotification(
-            fertileEndTexts.title,
-            fertileEndTexts.body,
-            fertileEndDate,
-            'cycle'
-          );
-          
-          if (fertileEndId) {
-            newNotifications.push({
-              id: `fertile_end_${Date.now()}`,
-              type: 'fertile_end',
-              notificationId: fertileEndId,
-              scheduledDate: fertileEndDate
-            });
-          }
+
+    const fertile = getFertileWindow(state.cycles);
+    if (fertile) {
+      const start = new Date(fertile.start.getFullYear(), fertile.start.getMonth(), fertile.start.getDate(), 9, 0, 0);
+      if (start &gt; new Date()) {
+        const [title, body] = t(language, 'fertile_start');
+        const id = await scheduleOneTimeNotification(title, body, start, 'cycle');
+        if (id) out.push({ id: `fertile_start_${Date.now()}`, type: 'fertile_start', notificationId: id, scheduledDate: start });
+      }
+      const ovu = getOvulationDate(state.cycles);
+      if (ovu) {
+        const ov = new Date(ovu.getFullYear(), ovu.getMonth(), ovu.getDate(), 10, 0, 0);
+        if (ov &gt; new Date()) {
+          const [title, body] = t(language, 'ovulation');
+          const id = await scheduleOneTimeNotification(title, body, ov, 'cycle');
+          if (id) out.push({ id: `ovulation_${Date.now()}`, type: 'ovulation', notificationId: id, scheduledDate: ov });
         }
       }
+      const end = new Date(fertile.end.getFullYear(), fertile.end.getMonth(), fertile.end.getDate(), 18, 0, 0);
+      if (end &gt; new Date()) {
+        const [title, body] = t(language, 'fertile_end');
+        const id = await scheduleOneTimeNotification(title, body, end, 'cycle');
+        if (id) out.push({ id: `fertile_end_${Date.now()}`, type: 'fertile_end', notificationId: id, scheduledDate: end });
+      }
     }
-    
-    // Weekly health check reminder (every Sunday at 11 AM)
+
+    // Weekly health check (next Sunday 11:00)
     const nextSunday = new Date();
-    nextSunday.setDate(nextSunday.getDate() + (7 - nextSunday.getDay()));
+    const day = nextSunday.getDay();
+    const add = (7 - day) % 7 || 7; // next Sunday (not today)
+    nextSunday.setDate(nextSunday.getDate() + add);
     nextSunday.setHours(11, 0, 0, 0);
-    
-    const healthCheckTexts = getNotificationTexts('health_check', language);
-    const healthCheckId = await scheduleOneTimeNotification(
-      healthCheckTexts.title,
-      healthCheckTexts.body,
-      nextSunday,
-      'cycle'
-    );
-    
-    if (healthCheckId) {
-      newNotifications.push({
-        id: `health_check_${Date.now()}`,
-        type: 'health_check',
-        notificationId: healthCheckId,
-        scheduledDate: nextSunday
-      });
-    }
-    
-    // Store the new notifications
-    storeCycleNotifications(newNotifications);
-    
-    console.log(`✅ Scheduled ${newNotifications.length} cycle notifications`);
-  } catch (error) {
-    console.error('❌ Error scheduling cycle notifications:', error);
+    const [title, body] = t(language, 'health_check');
+    const healthId = await scheduleOneTimeNotification(title, body, nextSunday, 'cycle');
+    if (healthId) out.push({ id: `health_check_${Date.now()}`, type: 'health_check', notificationId: healthId, scheduledDate: nextSunday });
+
+    storeCycleNotifications(out);
+    console.log(`✅ Scheduled ${out.length} cycle notifications`);
+  } catch (e) {
+    console.error('❌ Error scheduling cycle notifications:', e);
   }
 }
 
-/**
- * Update cycle notifications when cycle data changes
- */
-export async function updateCycleNotifications(state: AppState): Promise<void> {
-  // Reschedule all cycle notifications
+export async function updateCycleNotifications(state: AppState): Promise&lt;void&gt; {
   await scheduleCycleNotifications(state);
 }
