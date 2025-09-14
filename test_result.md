@@ -323,8 +323,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "All requested fixes completed successfully"
-    - "App updated to version 1.2.6"
+    - "HyperOS Device Detection for Notifications"
+    - "Chat Recipe Filter System"
+    - "Offline Chat Repetitive Responses Fix"
   stuck_tasks: []
   test_all: false
   test_priority: "completed"
