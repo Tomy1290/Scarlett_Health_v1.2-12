@@ -1,6 +1,7 @@
 import { AppState } from '../store/useStore';
 import { scheduleOneTimeNotification, cancelNotification } from './notifications';
 import { predictNextPeriod, calculateFertileWindow } from './cycle';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * AUTOMATIC CYCLE NOTIFICATIONS
