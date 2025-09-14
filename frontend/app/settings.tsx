@@ -55,10 +55,17 @@ export default function SettingsScreen() {
   const [cupInput, setCupInput] = useState(String(state.waterCupMl || 250));
   const [reminderTimes, setReminderTimes] = useState<Record<string, Date>>({});
 
+  // Initialize reminder times from stored reminders
   useEffect(() => {
-    const map: Record<string, string> = {};
-    for (const r of state.reminders) map[r.id] = r.time;
-    setTimeInputs(map);
+    const times: Record<string, Date> = {};
+    for (const r of state.reminders) {
+      // Parse stored time string (e.g. "08:00") to Date
+      const [hour, minute] = r.time.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hour, minute, 0, 0);
+      times[r.id] = date;
+    }
+    setReminderTimes(times);
   }, [state.reminders]);
 
   async function seedDefaults() {
