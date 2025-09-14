@@ -46,7 +46,7 @@ function storeCycleNotifications(notifications: CycleNotification[]): void {
  * Cancel all existing cycle notifications
  */
 async function cancelExistingCycleNotifications(): Promise<void> {
-  const existing = await getStoredCycleNotifications();
+  const existing = getStoredCycleNotifications();
   
   for (const notification of existing) {
     if (notification.notificationId) {
@@ -55,7 +55,7 @@ async function cancelExistingCycleNotifications(): Promise<void> {
   }
   
   // Clear storage
-  await storeCycleNotifications([]);
+  storeCycleNotifications([]);
   console.log('🗑️ Cancelled all existing cycle notifications');
 }
 
