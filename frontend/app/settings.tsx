@@ -59,11 +59,15 @@ export default function SettingsScreen() {
   useEffect(() => {
     const times: Record<string, Date> = {};
     for (const r of state.reminders) {
-      // Parse stored time string (e.g. "08:00") to Date
-      const [hour, minute] = r.time.split(':').map(Number);
-      const date = new Date();
-      date.setHours(hour, minute, 0, 0);
-      times[r.id] = date;
+      // Parse stored time string (e.g. "08:00") to Date - CRASH FIX: Check if time exists
+      if (r.time && typeof r.time === 'string' && r.time.includes(':')) {
+        const [hour, minute] = r.time.split(':').map(Number);
+        if (!isNaN(hour) && !isNaN(minute)) {
+          const date = new Date();
+          date.setHours(hour, minute, 0, 0);
+          times[r.id] = date;
+        }
+      }
     }
     setReminderTimes(times);
   }, [state.reminders]);
