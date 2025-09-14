@@ -51,9 +51,9 @@ export default function SettingsScreen() {
 
   const [customMode, setCustomMode] = useState(false);
   const [customLabel, setCustomLabel] = useState('');
-  const [customTime, setCustomTime] = useState('');
+  const [customTime, setCustomTime] = useState(new Date());
   const [cupInput, setCupInput] = useState(String(state.waterCupMl || 250));
-  const [timeInputs, setTimeInputs] = useState<Record<string, string>>({});
+  const [reminderTimes, setReminderTimes] = useState<Record<string, Date>>({});
 
   useEffect(() => {
     const map: Record<string, string> = {};
