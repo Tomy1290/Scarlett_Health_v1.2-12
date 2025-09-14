@@ -104,20 +104,11 @@ async def _call_llm(messages: List[Dict[str,str]], model: str) -> str:
         # Fallback: simple echo/tip if integration not available
         return messages[-1].get('content','').strip() or "Hi!"
     try:
-        # Convert messages to the format expected by LlmChat
-        formatted_messages = []
-        for msg in messages:
-            formatted_messages.append({
-                "role": msg["role"],
-                "content": msg["content"]
-            })
+        # Get the user message (last message in the conversation)
+        user_message = messages[-1].get('content', '') if messages else ''
         
-        resp = llm_client.chat(
-            model=model,
-            messages=formatted_messages,
-            temperature=0.4,
-            max_tokens=280,
-        )
+        # Use the LlmChat send_message method
+        resp = llm_client.with_model(model).send_message(user_message)
         
         # Extract content from response
         if hasattr(resp, 'content') and resp.content:
