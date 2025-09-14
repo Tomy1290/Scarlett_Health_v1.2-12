@@ -398,7 +398,17 @@ export default function SettingsScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.text, fontWeight: '700' }}>{reminderLabel(r.type, state.language as any, r.label)}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
-                  <TextInput value={timeInputs[r.id] ?? r.time} onChangeText={(v)=>setTimeInputs((m)=>({ ...m, [r.id]: formatTimeDigits(v) }))} onBlur={()=> updateTime(r.id, timeInputs[r.id] ?? r.time)} placeholder='HH:MM' placeholderTextColor={colors.muted} style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: colors.text, backgroundColor: colors.input }} />
+                  <View style={{ flex: 1 }}>
+                    <TimePicker
+                      value={reminderTimes[r.id] || new Date()}
+                      onChange={(date) => {
+                        setReminderTimes(prev => ({ ...prev, [r.id]: date }));
+                        const timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                        updateTime(r.id, timeString);
+                      }}
+                      style={{ borderWidth: 1, borderColor: colors.muted, borderRadius: 8, backgroundColor: colors.input }}
+                    />
+                  </View>
                   <View style={{ width: 8 }} />
                   <Switch value={r.enabled} onValueChange={(v)=>toggleReminder(r.id, v)} thumbColor={'#fff'} trackColor={{ true: colors.primary, false: colors.muted }} />
                 </View>
