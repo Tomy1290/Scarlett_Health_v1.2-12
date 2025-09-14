@@ -15,7 +15,11 @@ try:
     from emergentintegrations.llm.openai import LlmChat
     emergent_api_key = os.environ.get('EMERGENT_LLM_KEY')
     if emergent_api_key:
-        llm_client = LlmChat()
+        llm_client = LlmChat(
+            api_key=emergent_api_key,
+            session_id="health-tracker-backend",
+            system_message="You are Gugi, a friendly health coach."
+        )
     else:
         llm_client = None
 except Exception:  # pragma: no cover – fallback if lib not present
