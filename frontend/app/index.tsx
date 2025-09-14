@@ -192,8 +192,7 @@ export default function Home() {
         <View style={[styles.card, { backgroundColor: colors.card }]}> 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name='water' size={18} color={colors.primary} />
-              <Ionicons name='barbell' size={18} color={colors.primary} style={{ marginLeft: 8 }} />
+              <Ionicons name='cafe' size={18} color={colors.primary} />
               <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{t('Getränke & Sport', 'Drinks & Sport', 'Napoje i sport')}</Text>
             </View>
             <TouchableOpacity onPress={() => toggleHelp('drinks')}>
