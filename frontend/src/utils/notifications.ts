@@ -1,23 +1,36 @@
 import * as Notifications from 'expo-notifications';
 import { Platform, Alert } from 'react-native';
 
-// Set notification handler for foreground notifications
+/**
+ * NEW NOTIFICATION SYSTEM v1.2.9
+ * - No notification blocking/suppression
+ * - Clean permission handling  
+ * - Automatic cycle/ovulation notifications
+ * - Manual reminders from settings
+ * - Android TimePicker integration ready
+ */
+
+// Configure notification handler to allow all notifications
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
-    shouldSetBadge: false,
+    shouldSetBadge: true,
   }),
 });
 
-export async function ensureNotificationPermissions(): Promise<boolean> {
+/**
+ * Request notification permissions
+ */
+export async function requestNotificationPermissions(): Promise<boolean> {
   try {
-    const settings = await Notifications.getPermissionsAsync();
-    console.log('Current notification permissions:', settings);
+    console.log('🔔 Requesting notification permissions...');
     
-    if (settings.status !== 'granted') {
-      console.log('Requesting notification permissions...');
-      const req = await Notifications.requestPermissionsAsync({
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    console.log('📋 Current permission status:', existingStatus);
+    
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync({
         ios: {
           allowAlert: true,
           allowBadge: true,
@@ -30,303 +43,234 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
           allowSound: true,
         },
       });
-      console.log('Permission request result:', req);
-      return req.status === 'granted';
+      console.log('📋 Permission request result:', status);
+      return status === 'granted';
     }
+    
     return true;
   } catch (error) {
-    console.error('Error getting notification permissions:', error);
+    console.error('❌ Error requesting notification permissions:', error);
     return false;
   }
 }
 
-export async function ensureAndroidChannel() {
-  if (Platform.OS === 'android') {
-    try {
-      console.log('Setting up Android notification channel...');
-      
-      // Delete old channel first to reset settings
-      try {
-        await Notifications.deleteNotificationChannelAsync('reminders');
-      } catch (e) {
-        // Channel might not exist, that's ok
-      }
-      
-      const channel = await Notifications.setNotificationChannelAsync('reminders', {
-        name: 'Tabletten & Erinnerungen',
-        description: 'Erinnerungen für Tabletten, Gewicht, Sport und andere Gesundheitsaktivitäten',
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: 'default',
-        enableVibrate: true,
-        vibrationPattern: [0, 250, 250, 250],
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-        lightColor: '#FF2D87',
-        bypassDnd: true,
-        showBadge: true,
-      });
-      
-      console.log('Android channel created:', channel);
-      
-      // Also create a high priority channel for urgent reminders
-      await Notifications.setNotificationChannelAsync('urgent', {
-        name: 'Wichtige Erinnerungen',
-        description: 'Wichtige Gesundheitserinnerungen',
-        importance: Notifications.AndroidImportance.MAX,
-        sound: 'default',
-        enableVibrate: true,
-        vibrationPattern: [0, 500, 250, 500],
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-        lightColor: '#FF0000',
-        bypassDnd: true,
-        showBadge: true,
-      });
-      
-    } catch (error) {
-      console.error('Error setting up Android channels:', error);
-    }
-  }
-}
-
-function normalizeTime(input: string): string {
-  if (!input) return '';
-  let s = input.trim();
-  // replace common separators with ':'
-  s = s.replace(/[．。·•·。•・]/g, ':'); // exotic dots
-  s = s.replace(/[：:;，,]/g, ':'); // full-width colon and similar
-  s = s.replace(/\s+/g, ':');
-  // if only digits like 730 or 0730
-  const digits = s.replace(/[^0-9]/g, '');
-  if (digits.length === 4) return `${digits.slice(0,2)}:${digits.slice(2)}`;
-  if (digits.length === 3) return `0${digits[0]}:${digits.slice(1)}`;
-  if (digits.length === 2) return `${digits}:00`;
-  // accept H:MM or HH:MM
-  const m = s.match(/^(\d{1,2}):(\d{1,2})$/);
-  if (m) {
-    const h = m[1].padStart(2,'0');
-    const mm = m[2].padStart(2,'0');
-    return `${h}:${mm}`;
-  }
-  return s;
-}
-
-export function parseHHMM(time: string): { hour: number; minute: number } | null {
-  const norm = normalizeTime(time);
-  const m = norm.match(/^(\d{2}):(\d{2})$/);
-  if (!m) return null;
-  const hour = parseInt(m[1], 10);
-  const minute = parseInt(m[2], 10);
-  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
-  return { hour, minute };
-}
-
-export async function scheduleDailyReminder(id: string, title: string, body: string, time: string, isUrgent: boolean = false): Promise<string | null> {
+/**
+ * Setup Android notification channels
+ */
+export async function setupAndroidChannels(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  
   try {
-    console.log(`Scheduling daily reminder: ${id} at ${time} - ${title}`);
+    console.log('📱 Setting up Android notification channels...');
     
-    const parsed = parseHHMM(time);
-    if (!parsed) {
-      console.error('Failed to parse time:', time);
-      return null;
-    }
-
-    // Ensure permissions first
-    const hasPermission = await ensureNotificationPermissions();
-    if (!hasPermission) {
-      console.error('No notification permission');
-      Alert.alert(
-        'Benachrichtigungen nicht erlaubt',
-        'Bitte aktivieren Sie Benachrichtigungen in den Geräteeinstellungen.',
-        [{ text: 'OK' }]
-      );
-      return null;
-    }
-
-    // Ensure channel exists
-    await ensureAndroidChannel();
-
-    const channelId = isUrgent ? 'urgent' : 'reminders';
-    
-    // For Android, we need to use CalendarTriggerInput with explicit channel
-    const trigger: Notifications.CalendarTriggerInput = {
-      hour: parsed.hour,
-      minute: parsed.minute,
-      repeats: true,
-    };
-
-    const notificationContent: Notifications.NotificationContentInput = {
-      title,
-      body,
+    // Main reminders channel
+    await Notifications.setNotificationChannelAsync('reminders', {
+      name: 'Erinnerungen',
+      description: 'Tabletten, Sport, Gewicht und andere Erinnerungen',
+      importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
-      priority: isUrgent ? Notifications.AndroidNotificationPriority.MAX : Notifications.AndroidNotificationPriority.HIGH,
-      sticky: false,
-      autoDismiss: true,
-    };
-
-    // Add Android-specific properties
-    if (Platform.OS === 'android') {
-      (notificationContent as any).channelId = channelId;
-    }
-
-    const notifId = await Notifications.scheduleNotificationAsync({
-      content: notificationContent,
-      trigger,
+      enableVibrate: true,
+      vibrationPattern: [0, 250, 250, 250],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      lightColor: '#FF2D87',
+      showBadge: true,
     });
-
-    console.log(`Scheduled notification ${notifId} for ${time}`);
     
-    // Test the notification by scheduling one for 10 seconds from now
-    if (id.startsWith('test_')) {
-      const testDate = new Date();
-      testDate.setSeconds(testDate.getSeconds() + 10);
-      
-      const testNotifId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: `TEST: ${title}`,
-          body: `Test-Benachrichtigung: ${body}`,
-          sound: 'default',
-          ...(Platform.OS === 'android' && { channelId }),
-        },
-        trigger: { date: testDate },
-      });
-      
-      console.log(`Test notification scheduled: ${testNotifId}`);
+    // Cycle notifications channel  
+    await Notifications.setNotificationChannelAsync('cycle', {
+      name: 'Zyklus & Gesundheit',
+      description: 'Automatische Zyklus-, Eisprung- und Gesundheitsbenachrichtigungen',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      enableVibrate: true,
+      vibrationPattern: [0, 500, 250, 500],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      lightColor: '#FF69B4',
+      showBadge: true,
+    });
+    
+    console.log('✅ Android channels setup complete');
+  } catch (error) {
+    console.error('❌ Error setting up Android channels:', error);
+  }
+}
+
+/**
+ * Initialize notification system
+ */
+export async function initializeNotifications(): Promise<boolean> {
+  try {
+    console.log('🚀 Initializing notification system...');
+    
+    const hasPermissions = await requestNotificationPermissions();
+    if (!hasPermissions) {
+      console.warn('⚠️ No notification permissions granted');
+      return false;
     }
     
-    return notifId;
+    await setupAndroidChannels();
+    console.log('✅ Notification system initialized');
+    return true;
   } catch (error) {
-    console.error('Error scheduling notification:', error);
+    console.error('❌ Error initializing notifications:', error);
+    return false;
+  }
+}
+
+/**
+ * Schedule a daily reminder
+ */
+export async function scheduleDailyReminder(
+  id: string,
+  title: string, 
+  body: string,
+  hour: number,
+  minute: number,
+  channel: 'reminders' | 'cycle' = 'reminders'
+): Promise<string | null> {
+  try {
+    console.log(`📅 Scheduling daily reminder: ${id} at ${hour}:${minute}`);
+    
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: 'default',
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        ...(Platform.OS === 'android' && { channelId: channel }),
+      },
+      trigger: {
+        hour,
+        minute,
+        repeats: true,
+      },
+    });
+    
+    console.log(`✅ Scheduled notification: ${notificationId}`);
+    return notificationId;
+  } catch (error) {
+    console.error('❌ Error scheduling daily reminder:', error);
     return null;
   }
 }
 
-export async function scheduleOneTime(title: string, body: string, date: Date, isUrgent: boolean = false): Promise<string | null> {
+/**
+ * Schedule a one-time notification
+ */
+export async function scheduleOneTimeNotification(
+  title: string,
+  body: string, 
+  date: Date,
+  channel: 'reminders' | 'cycle' = 'cycle'
+): Promise<string | null> {
   try {
-    if (+date <= +new Date()) {
-      console.log('Date is in the past, not scheduling');
+    if (date <= new Date()) {
+      console.warn('⚠️ Cannot schedule notification in the past');
       return null;
     }
-
-    const hasPermission = await ensureNotificationPermissions();
-    if (!hasPermission) {
-      console.error('No notification permission');
-      return null;
-    }
-
-    await ensureAndroidChannel();
-
-    const channelId = isUrgent ? 'urgent' : 'reminders';
     
-    const trigger: Notifications.DateTriggerInput = {
-      date,
-    };
-
-    const notificationContent: Notifications.NotificationContentInput = {
-      title,
-      body,
-      sound: 'default',
-      priority: isUrgent ? Notifications.AndroidNotificationPriority.MAX : Notifications.AndroidNotificationPriority.HIGH,
-    };
-
-    if (Platform.OS === 'android') {
-      (notificationContent as any).channelId = channelId;
-    }
-
-    const id = await Notifications.scheduleNotificationAsync({
-      content: notificationContent,
-      trigger,
+    console.log(`📅 Scheduling one-time notification for: ${date.toISOString()}`);
+    
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: 'default',
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        ...(Platform.OS === 'android' && { channelId: channel }),
+      },
+      trigger: {
+        date,
+      },
     });
-
-    console.log(`Scheduled one-time notification: ${id} for ${date}`);
-    return id;
+    
+    console.log(`✅ Scheduled one-time notification: ${notificationId}`);
+    return notificationId;
   } catch (error) {
-    console.error('Error scheduling one-time notification:', error);
+    console.error('❌ Error scheduling one-time notification:', error);
     return null;
   }
 }
 
-export async function cancelNotification(notifId?: string | null) {
-  if (notifId) {
-    try {
-      await Notifications.cancelScheduledNotificationAsync(notifId);
-      console.log(`Cancelled notification: ${notifId}`);
-    } catch (error) {
-      console.error('Error cancelling notification:', error);
-    }
+/**
+ * Cancel notification by ID
+ */
+export async function cancelNotification(notificationId: string): Promise<void> {
+  try {
+    await Notifications.cancelScheduledNotificationAsync(notificationId);
+    console.log(`🗑️ Cancelled notification: ${notificationId}`);
+  } catch (error) {
+    console.error('❌ Error cancelling notification:', error);
   }
 }
 
-export async function cancelAllNotifications() {
+/**
+ * Cancel all notifications
+ */
+export async function cancelAllNotifications(): Promise<void> {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
-    console.log('Cancelled all notifications');
+    console.log('🗑️ Cancelled all notifications');
   } catch (error) {
-    console.error('Error cancelling all notifications:', error);
+    console.error('❌ Error cancelling all notifications:', error);
   }
 }
 
-export async function getScheduledNotifications() {
+/**
+ * Get all scheduled notifications
+ */
+export async function getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
   try {
     const notifications = await Notifications.getAllScheduledNotificationsAsync();
-    console.log('Scheduled notifications:', notifications);
+    console.log(`📋 Found ${notifications.length} scheduled notifications`);
     return notifications;
   } catch (error) {
-    console.error('Error getting scheduled notifications:', error);
+    console.error('❌ Error getting scheduled notifications:', error);
     return [];
   }
 }
 
-// Test function to verify notifications work
-export async function testNotification() {
+/**
+ * Test notification system
+ */
+export async function testNotification(): Promise<void> {
   try {
-    console.log('Starting notification test...');
+    console.log('🧪 Testing notification system...');
     
-    const hasPermission = await ensureNotificationPermissions();
-    if (!hasPermission) {
-      Alert.alert('Fehler', 'Keine Berechtigung für Benachrichtigungen. Bitte in den Geräteeinstellungen aktivieren.');
+    const hasPermissions = await requestNotificationPermissions();
+    if (!hasPermissions) {
+      Alert.alert('Fehler', 'Benachrichtigungen sind nicht erlaubt. Bitte in den Geräteeinstellungen aktivieren.');
       return;
     }
-
-    await ensureAndroidChannel();
-
+    
+    await setupAndroidChannels();
+    
+    // Schedule test notification for 3 seconds from now
     const testDate = new Date();
-    testDate.setSeconds(testDate.getSeconds() + 3); // 3 seconds instead of 5
-
-    console.log('Scheduling test notification for:', testDate.toISOString());
-
-    const notifId = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '✅ Test erfolgreich!',
-        body: 'Benachrichtigungen funktionieren korrekt. Du kannst jetzt Erinnerungen einrichten.',
-        sound: 'default',
-        priority: Notifications.AndroidNotificationPriority.HIGH,
-        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
-      },
-      trigger: { 
-        date: testDate,
-      },
-    });
-
-    console.log('Test notification scheduled with ID:', notifId);
-
-    if (notifId) {
+    testDate.setSeconds(testDate.getSeconds() + 3);
+    
+    const notificationId = await scheduleOneTimeNotification(
+      '✅ Test erfolgreich!',
+      'Benachrichtigungen funktionieren. Du kannst jetzt Erinnerungen einrichten.',
+      testDate,
+      'reminders'
+    );
+    
+    if (notificationId) {
       Alert.alert(
         '🧪 Test gestartet',
-        'Eine Test-Benachrichtigung wird in 3 Sekunden angezeigt. Falls sie nicht erscheint, prüfe deine Geräteeinstellungen.',
+        'Eine Test-Benachrichtigung wird in 3 Sekunden angezeigt.',
         [{ text: 'OK' }]
       );
-      
-      // Also show immediate notification to test permissions
-      await Notifications.presentNotificationAsync({
-        title: '🔔 Sofort-Test',
-        body: 'Diese Benachrichtigung erscheint sofort.',
-        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
-      });
-      
     } else {
       Alert.alert('Fehler', 'Test-Benachrichtigung konnte nicht geplant werden');
     }
   } catch (error) {
-    console.error('Error testing notification:', error);
-    Alert.alert('Fehler', `Test fehlgeschlagen: ${error.message}\n\nMöglicherweise sind Benachrichtigungen in den Systemeinstellungen deaktiviert.`);
+    console.error('❌ Error testing notifications:', error);
+    Alert.alert('Fehler', `Test fehlgeschlagen: ${error.message}`);
   }
 }
+
+// Legacy function aliases for compatibility
+export const ensureNotificationPermissions = requestNotificationPermissions;
+export const ensureAndroidChannel = setupAndroidChannels;
