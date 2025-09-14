@@ -22,7 +22,7 @@ const CYCLE_NOTIFICATION_STORAGE_KEY = 'cycleNotifications';
 /**
  * Get stored cycle notifications
  */
-async function getStoredCycleNotifications(): Promise<CycleNotification[]> {
+function getStoredCycleNotifications(): CycleNotification[] {
   try {
     const stored = storage.getString(CYCLE_NOTIFICATION_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
@@ -34,7 +34,7 @@ async function getStoredCycleNotifications(): Promise<CycleNotification[]> {
 /**
  * Store cycle notifications
  */
-async function storeCycleNotifications(notifications: CycleNotification[]): Promise<void> {
+function storeCycleNotifications(notifications: CycleNotification[]): void {
   try {
     storage.set(CYCLE_NOTIFICATION_STORAGE_KEY, JSON.stringify(notifications));
   } catch (error) {
