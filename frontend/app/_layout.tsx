@@ -24,8 +24,20 @@ export default function RootLayout() {
 
   useEffect(() => {
     (async () => {
-      await ensureNotificationPermissions();
-      await ensureAndroidChannel();
+      console.log('🚀 Initializing app notifications...');
+      
+      // Initialize the new notification system
+      const initialized = await initializeNotifications();
+      
+      if (initialized) {
+        // Schedule automatic cycle notifications
+        const state = useAppStore.getState();
+        await scheduleCycleNotifications(state);
+        
+        console.log('✅ App notifications fully initialized');
+      } else {
+        console.warn('⚠️ Failed to initialize notifications');
+      }
     })();
   }, []);
 
