@@ -315,6 +315,20 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "✅ IMPLEMENTED: Added response variation system with 30-minute cache to prevent repetitive answers. Each topic now has multiple response variations with additional tips and context."
+  - task: "Direct Frontend LLM Integration"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/ai/hybridChat.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Backend LLM integration was failing, needed to move to direct frontend integration"
+      - working: "NA"
+        agent: "main"
+        comment: "✅ IMPLEMENTED: Removed backend dependency and implemented direct OpenAI API calls in frontend using Emergent LLM Key. Chat now connects directly to OpenAI GPT-4o-mini with proper error handling and fallback to local AI."
 metadata:
   created_by: "main_agent"
   version: "1.0"
