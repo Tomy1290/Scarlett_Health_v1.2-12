@@ -175,8 +175,8 @@ export default function SettingsScreen() {
   }
 
   async function updateTime(id: string, time: string) {
-    const ok = !!parseHHMM(time);
-    if (!ok) { return; }
+    const timeData = parseHHMM(time);
+    if (!timeData) { return; }
     const r = state.reminders.find(x=>x.id===id);
     if (!r) return;
     state.updateReminder(id, { time });
@@ -184,10 +184,26 @@ export default function SettingsScreen() {
     const title = reminderLabel(r.type, state.language as any, r.label);
     if (r.enabled) {
       await cancelNotification(meta?.id);
-      await ensureNotificationPermissions();
-      await ensureAndroidChannel();
-      const newId = await scheduleDailyReminder(id, title, state.language==='de'?'Zeit für eine Aktion':(state.language==='pl'?'Czas na działanie':'Time for an action'), time, r.type === 'pills_morning' || r.type === 'pills_evening');
-      state.setNotificationMeta(id, { id: newId || '', time });
+      const initialized = await initializeNotifications();
+      if (!initialized) return;
+      
+      const newId = await scheduleDailyReminder(
+        id, 
+        title, 
+        state.language==='de'?'Zeit für eine Aktion':(state.language==='pl'?'Czas na działanie':'Time for an action'), 
+        timeData.hour, 
+        timeData.minute,
+        'reminders'
+      );
+      
+      if (newId) {
+        state.setNotificationMeta(id, { id: newId, time });
+        
+        // Update local state
+        const date = new Date();
+        date.setHours(timeData.hour, timeData.minute, 0, 0);
+        setReminderTimes(prev => ({ ...prev, [id]: date }));
+      }
     } else {
       state.setNotificationMeta(id, { id: meta?.id || '', time });
     }
