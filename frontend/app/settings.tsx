@@ -413,11 +413,11 @@ export default function SettingsScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
                   <View style={{ flex: 1 }}>
                     <TimePicker
-                      value={reminderTimes[r.id] || new Date()}
-                      onChange={(date) => {
-                        setReminderTimes(prev => ({ ...prev, [r.id]: date }));
-                        const timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                        updateTime(r.id, timeString);
+                      time={reminderTimes[r.id] || new Date()}
+                      onTimeChange={(date) => updateTime(r.id, date)}
+                      colors={colors}
+                      style={{ width: 120 }}
+                    />
                       }}
                       style={{ borderWidth: 1, borderColor: colors.muted, borderRadius: 8, backgroundColor: colors.input }}
                     />
