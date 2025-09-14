@@ -51,9 +51,9 @@ export default function SettingsScreen() {
 
   const [customMode, setCustomMode] = useState(false);
   const [customLabel, setCustomLabel] = useState('');
-  const [customTime, setCustomTime] = useState(new Date());
+  const [customTime, setCustomTime] = useState('08:00');
   const [cupInput, setCupInput] = useState(String(state.waterCupMl || 250));
-  const [reminderTimes, setReminderTimes] = useState<Record<string, Date>>({});
+  const [reminderTimes, setReminderTimes] = useState<Record<string, string>>({});
 
   // Initialize reminder times from stored reminders - CRASH-PROOF VERSION
   useEffect(() => {
