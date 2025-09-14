@@ -13,9 +13,7 @@ import {
   scheduleDailyReminder, 
   cancelNotification, 
   testNotification, 
-  getScheduledNotifications,
-  ensureNotificationPermissions,
-  ensureAndroidChannel
+  getScheduledNotifications 
 } from "../src/utils/notifications";
 import { TimePicker } from "../src/components/TimePicker";
 
