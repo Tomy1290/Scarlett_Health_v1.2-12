@@ -276,7 +276,81 @@ export default function ChatScreen() {
               <Text style={{ color: colors.muted, marginTop: 6 }}>{lbl('Wähle Küche, Kategorie, Mahlzeit oder nutze Suche.','Choose cuisine, category, meal or use search.','Wybierz kuchnię, kategorię, posiłek lub użyj wyszukiwania.')}</Text>
 
               <ScrollView contentContainerStyle={{ paddingVertical: 8 }}>
-                {/* Cuisine chips, Category, Meal, Search, Results... unchanged from previous block */}
+                {/* Cuisine */}
+                <Text style={{ color: colors.text, fontWeight: '600', marginBottom: 6 }}>{lbl('Küche','Cuisine','Kuchnia')}</Text>
+                <ScrollView horizontal contentContainerStyle={{ gap: 8, paddingVertical: 4 }} showsHorizontalScrollIndicator={false}>
+                  {CUISINES.map(c => (
+                    <TouchableOpacity key={c} onPress={() => setSelCuisine(c)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: selCuisine===c?colors.primary:'transparent' }]}>
+                      <Text style={{ color: selCuisine===c?'#fff':colors.text }}>{c==='any'?lbl('Alle','Any','Wszystkie'):c.toUpperCase()}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                {/* Category */}
+                <Text style={{ color: colors.text, fontWeight: '600', marginTop: 12, marginBottom: 6 }}>{lbl('Kategorie','Category','Kategoria')}</Text>
+                <ScrollView horizontal contentContainerStyle={{ gap: 8, paddingVertical: 4 }} showsHorizontalScrollIndicator={false}>
+                  {CATS.map(c => (
+                    <TouchableOpacity key={c} onPress={() => setSelCat(c)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: selCat===c?colors.primary:'transparent' }]}>
+                      <Text style={{ color: selCat===c?'#fff':colors.text }}>
+                        {c==='any'?lbl('Alle','Any','Wszystkie'):
+                         c==='fleisch'?lbl('Fleisch','Meat','Mięso'):
+                         c==='lowcarb'?'Low Carb':
+                         c==='abnehmen'?lbl('Abnehmen','Weight Loss','Odchudzanie'):
+                         c==='vegetarisch'?lbl('Vegetarisch','Vegetarian','Wegetariańskie'):
+                         c==='kuchen'?lbl('Kuchen','Cake','Ciasto'):
+                         c==='suesses'?lbl('Süßes','Sweet','Słodkie'):c}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                {/* Meal */}
+                <Text style={{ color: colors.text, fontWeight: '600', marginTop: 12, marginBottom: 6 }}>{lbl('Mahlzeit','Meal','Posiłek')}</Text>
+                <ScrollView horizontal contentContainerStyle={{ gap: 8, paddingVertical: 4 }} showsHorizontalScrollIndicator={false}>
+                  {MEALS.map(m => (
+                    <TouchableOpacity key={m} onPress={() => setSelMeal(m)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: selMeal===m?colors.primary:'transparent' }]}>
+                      <Text style={{ color: selMeal===m?'#fff':colors.text }}>
+                        {m==='any'?lbl('Alle','Any','Wszystkie'):
+                         m==='breakfast'?lbl('Frühstück','Breakfast','Śniadanie'):
+                         m==='lunch'?lbl('Mittag','Lunch','Obiad'):
+                         m==='dinner'?lbl('Abend','Dinner','Kolacja'):m}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                {/* Search */}
+                <Text style={{ color: colors.text, fontWeight: '600', marginTop: 12, marginBottom: 6 }}>{lbl('Suche','Search','Szukaj')}</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TextInput
+                    value={kw}
+                    onChangeText={setKw}
+                    placeholder={lbl('Stichwort...','Keyword...','Słowo kluczowe...')}
+                    placeholderTextColor={colors.muted}
+                    style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: colors.text, backgroundColor: colors.input }}
+                  />
+                  <TouchableOpacity onPress={runSearch} style={[styles.badge, { backgroundColor: colors.primary }]}>
+                    <Text style={{ color: '#fff' }}>{lbl('Suchen','Search','Szukaj')}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Results */}
+                {results.length > 0 && (
+                  <>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+                      <Text style={{ color: colors.text, fontWeight: '600' }}>{results.length} {lbl('Ergebnisse','Results','Wyniki')}</Text>
+                      <TouchableOpacity onPress={shareResultsToChat} style={[styles.badge, { backgroundColor: colors.primary }]}>
+                        <Text style={{ color: '#fff' }}>{lbl('In Chat teilen','Share to chat','Udostępnij na czacie')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {results.slice(0, 8).map((r: any) => (
+                      <TouchableOpacity key={r.id} onPress={() => setDetailId(r.id)} style={[styles.card, { backgroundColor: colors.card, marginTop: 8 }]}>
+                        <Text style={{ color: colors.text, fontWeight: '600' }}>{r.title[state.language]}</Text>
+                        <Text style={{ color: colors.muted, marginTop: 4 }}>{r.desc[state.language]}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </>
+                )}
               </ScrollView>
             </View>
           </View>
