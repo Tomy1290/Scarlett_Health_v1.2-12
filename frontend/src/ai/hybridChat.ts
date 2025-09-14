@@ -1,4 +1,4 @@
-import { apiFetch } from '../utils/api';
+import Constants from 'expo-constants';
 import { localGreeting, localReply } from './localChat';
 import { computeAISummary } from './summary';
 
@@ -14,44 +14,105 @@ export interface CloudChatRequest {
   messages?: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
 }
 
+// Direct OpenAI API integration using Emergent LLM Key
+const EMERGENT_LLM_KEY = Constants.expoConfig?.extra?.EXPO_PUBLIC_EMERGENT_LLM_KEY || process.env.EXPO_PUBLIC_EMERGENT_LLM_KEY;
+
 /**
- * Test if Cloud LLM is reachable by doing a simple health check
+ * Test if Direct LLM is reachable by doing a simple health check
  */
 export async function testCloudConnection(): Promise<boolean> {
+  if (!EMERGENT_LLM_KEY) {
+    console.warn('No Emergent LLM Key available');
+    return false;
+  }
+  
   try {
-    const response = await apiFetch('/', { 
+    // Simple test request to OpenAI API
+    const response = await fetch('https://api.openai.com/v1/models', {
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${EMERGENT_LLM_KEY}`,
+        'Content-Type': 'application/json',
+      },
       signal: AbortSignal.timeout(3000) // 3 second timeout
     });
     return response.ok;
   } catch (error) {
-    console.warn('Cloud LLM connection test failed:', error);
+    console.warn('Direct LLM connection test failed:', error);
     return false;
   }
 }
 
 /**
- * Call Cloud LLM with timeout and error handling
+ * Call OpenAI API directly using Emergent LLM Key
  */
 export async function callCloudLLM(request: CloudChatRequest): Promise<string> {
+  if (!EMERGENT_LLM_KEY) {
+    throw new Error('No Emergent LLM Key available');
+  }
+
   try {
-    const response = await apiFetch('/chat', {
+    const systemPrompt = request.language === 'de' 
+      ? 'Du bist Gugi, ein freundlicher Gesundheitscoach. Antworte kurz und hilfsreich auf Deutsch.'
+      : request.language === 'pl'
+      ? 'Jesteś Gugi, przyjaznym trenerem zdrowia. Odpowiadaj krótko i pomocnie po polsku.'
+      : 'You are Gugi, a friendly health coach. Respond briefly and helpfully in English.';
+
+    const messages = [
+      { role: 'system', content: systemPrompt }
+    ];
+
+    if (request.mode === 'greeting') {
+      // Create greeting based on summary
+      const summaryText = request.summary ? 
+        `User data: ${JSON.stringify(request.summary, null, 2)}` : 
+        'No user data available';
+      
+      messages.push({
+        role: 'user',
+        content: request.language === 'de' 
+          ? `Begrüße mich freundlich als Gesundheitscoach. Hier sind meine Daten: ${summaryText}`
+          : request.language === 'pl'
+          ? `Przywitaj mnie przyjaźnie jako trener zdrowia. Oto moje dane: ${summaryText}`
+          : `Greet me friendly as a health coach. Here's my data: ${summaryText}`
+      });
+    } else {
+      // Add chat history and current message
+      if (request.messages) {
+        messages.push(...request.messages);
+      }
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${EMERGENT_LLM_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify({
+        model: request.model || 'gpt-4o-mini',
+        messages,
+        max_tokens: 280,
+        temperature: 0.4,
+      }),
       signal: AbortSignal.timeout(8000) // 8 second timeout
     });
 
     if (!response.ok) {
-      throw new Error(`Cloud LLM responded with status ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`OpenAI API responded with status ${response.status}: ${errorText}`);
     }
 
-    const data: CloudChatResponse = await response.json();
-    return data.text || '';
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    if (!content.trim()) {
+      throw new Error('Empty response from OpenAI API');
+    }
+
+    return content.trim();
   } catch (error) {
-    console.warn('Cloud LLM call failed:', error);
+    console.warn('Direct LLM call failed:', error);
     throw error;
   }
 }
