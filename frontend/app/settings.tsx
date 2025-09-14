@@ -233,39 +233,50 @@ export default function SettingsScreen() {
     }
   }
 
-  async function updateTime(id: string, time: string) {
-    const timeData = parseHHMM(time);
-    if (!timeData) { return; }
-    const r = state.reminders.find(x=>x.id===id);
+  async function updateTime(id: string, newTime: Date) {
+    const hour = newTime.getHours();
+    const minute = newTime.getMinutes();
+    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    
+    const r = state.reminders.find(x => x.id === id);
     if (!r) return;
-    state.updateReminder(id, { time });
+    
+    // Update store with new time
+    state.updateReminder(id, { time: timeString });
+    
     const meta = state.notificationMeta[id];
     const title = reminderLabel(r.type, state.language as any, r.label);
+    
     if (r.enabled) {
-      await cancelNotification(meta?.id);
+      // Cancel old notification
+      if (meta?.id) {
+        await cancelNotification(meta.id);
+      }
+      
       const initialized = await initializeNotifications();
       if (!initialized) return;
       
-      const newId = await scheduleDailyReminder(
+      // Schedule new notification
+      const newNotifId = await scheduleDailyReminder(
         id, 
         title, 
         state.language==='de'?'Zeit für eine Aktion':(state.language==='pl'?'Czas na działanie':'Time for an action'), 
-        timeData.hour, 
-        timeData.minute,
+        hour, 
+        minute,
         'reminders'
       );
       
-      if (newId) {
-        state.setNotificationMeta(id, { id: newId, time });
-        
-        // Update local state
-        const date = new Date();
-        date.setHours(timeData.hour, timeData.minute, 0, 0);
-        setReminderTimes(prev => ({ ...prev, [id]: date }));
+      if (newNotifId) {
+        state.setNotificationMeta(id, { id: newNotifId, time: timeString });
+        console.log(`✅ Updated reminder ${id} to ${timeString} with notification ID: ${newNotifId}`);
       }
     } else {
-      state.setNotificationMeta(id, { id: meta?.id || '', time });
+      // Just update metadata if disabled
+      state.setNotificationMeta(id, { id: meta?.id || '', time: timeString });
     }
+    
+    // Update local state
+    setReminderTimes(prev => ({ ...prev, [id]: newTime }));
   }
 
   async function exportData() {
