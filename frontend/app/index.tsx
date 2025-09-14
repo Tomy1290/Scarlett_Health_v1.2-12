@@ -308,7 +308,7 @@ export default function Home() {
             {state.cycles.find((c: any) => !c.end) ? (
               <TouchableOpacity onPress={() => { state.endCycle(currentDate); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }} style={[styles.cta, { backgroundColor: colors.primary }]}>
                 <Ionicons name='stop' size={16} color={'#fff'} />
-                <Text style={{ color: '#fff', marginLeft: 6 }}>{language==='de'?'Zyklus Ende':(language==='pl'?'Koniec cyklu':'End cycle')}</Text>
+                <Text style={{ color: '#fff', marginLeft: 6 }}>{language==='de'?'Ende Periode':(language==='pl'?'Koniec okresu':'End period')}</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity onPress={() => { state.startCycle(currentDate); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }} style={[styles.cta, { backgroundColor: colors.primary }]}>
