@@ -85,10 +85,14 @@ export async function scheduleDailyNext(
 ): Promise<string | null> {
   try {
     const when = computeNextOccurrence(hour, minute);
+    const now = new Date();
+    let diffSec = Math.ceil((+when - +now) / 1000);
+    if (diffSec < 60) diffSec = 60; // mindestens 60 Sekunden in die Zukunft
     const nid = await Notifications.scheduleNotificationAsync({
-      content: { title, body, sound: true },
-      trigger: { date: when, channelId: channel },
+      content: { title, body, sound: true, ...(Platform.OS === 'android' && { channelId: channel }) },
+      trigger: { seconds: diffSec },
     });
+    try { console.log(`⏲️ [DailyNext] in ${diffSec}s (${when.toLocaleString()})`); } catch {}
     logNotificationPlanned('DailyNext', title, when);
     return nid;
   } catch (e) { console.error('❌ scheduleDailyNext error:', e); return null; }
