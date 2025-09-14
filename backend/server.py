@@ -107,20 +107,20 @@ async def _call_llm(messages: List[Dict[str,str]], model: str) -> str:
         # Get the user message (last message in the conversation)
         user_message = messages[-1].get('content', '') if messages else ''
         
-        # Use the OpenAI LlmChat with model and send_message
-        resp = llm_client.with_model(model).send_message(user_message)
+        # Use the OpenAI LlmChat with provider, model and async send_message
+        client_with_model = llm_client.with_model('openai', model)
+        resp = await client_with_model.send_message(user_message)
         
         # Extract content from response
-        if hasattr(resp, 'content') and resp.content:
-            return resp.content.strip()
-        elif isinstance(resp, str):
+        if isinstance(resp, str):
             return resp.strip()
         else:
             return str(resp).strip()
             
     except Exception as e:
         logging.exception("LLM call failed: %s", e)
-        raise HTTPException(status_code=500, detail="LLM error")
+        # Return fallback instead of raising error to keep API working
+        return "I'm having trouble connecting to the AI service right now. Please try again later."
 
 @api_router.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
