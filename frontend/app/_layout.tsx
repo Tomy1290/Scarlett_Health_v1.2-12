@@ -6,18 +6,7 @@ import * as Notifications from 'expo-notifications';
 import { ensureAndroidChannel, ensureNotificationPermissions } from "../src/utils/notifications";
 import { useAppStore } from "../src/store/useStore";
 
-// Set notification handler for proper notification display
-Notifications.setNotificationHandler({
-  handleNotification: async (notification) => {
-    // Only suppress notifications when app is in foreground
-    const appState = AppState.currentState;
-    if (appState === 'active') {
-      return { shouldShowAlert: false, shouldPlaySound: false, shouldSetBadge: false };
-    } else {
-      return { shouldShowAlert: true, shouldPlaySound: true, shouldSetBadge: true };
-    }
-  },
-});
+
 
 export default function RootLayout() {
   const theme = useAppStore((s) => s.theme);
