@@ -27,6 +27,7 @@ const getEmergentLLMKey = () => {
  * Test if Direct LLM is reachable by doing a simple health check
  */
 export async function testCloudConnection(): Promise<boolean> {
+  const EMERGENT_LLM_KEY = getEmergentLLMKey();
   if (!EMERGENT_LLM_KEY) {
     console.warn('No Emergent LLM Key available');
     return false;
