@@ -96,23 +96,29 @@ async def _call_llm(messages: List[Dict[str,str]], model: str) -> str:
         # Fallback: simple echo/tip if integration not available
         return messages[-1].get('content','').strip() or "Hi!"
     try:
-        resp = await llm_client.chat_completion(
+        # Convert messages to the format expected by LlmChat
+        formatted_messages = []
+        for msg in messages:
+            formatted_messages.append({
+                "role": msg["role"],
+                "content": msg["content"]
+            })
+        
+        resp = llm_client.chat(
             model=model,
-            messages=messages,
+            messages=formatted_messages,
             temperature=0.4,
             max_tokens=280,
         )
-        # Unify result extraction across providers
-        # emergentintegrations returns OpenAI-style choices
-        content = None
-        if hasattr(resp, 'choices') and resp.choices:
-            msg = getattr(resp.choices[0], 'message', None)
-            if msg and hasattr(msg, 'content'):
-                content = msg.content
-        if not content:
-            # try dict fallback
-            content = (getattr(resp, 'content', None) or '').strip()
-        return (content or '').strip() or ""
+        
+        # Extract content from response
+        if hasattr(resp, 'content') and resp.content:
+            return resp.content.strip()
+        elif isinstance(resp, str):
+            return resp.strip()
+        else:
+            return str(resp).strip()
+            
     except Exception as e:
         logging.exception("LLM call failed: %s", e)
         raise HTTPException(status_code=500, detail="LLM error")
