@@ -10,7 +10,16 @@ Notifications.setNotificationHandler({
   }),
 });
 
-let listenersBound = false;
+// Simple planner logger
+function logNotificationPlanned(type: string, title: string, when: Date | null) {
+  if (when) {
+    try {
+      console.log(`🔔 [${type}] Notification geplant: "${title}" → ${when.toLocaleString()}`);
+    } catch {}
+  } else {
+    try { console.log(`⏭️ [${type}] Notification für "${title}" nicht geplant (Vergangenheit).`); } catch {}
+  }
+}
 
 export async function requestNotificationPermissions(): Promise<boolean> {
   try {
@@ -77,54 +86,24 @@ export async function scheduleDailyNext(
   try {
     const when = computeNextOccurrence(hour, minute);
     const nid = await Notifications.scheduleNotificationAsync({
-      content: { title, body, sound: 'default', priority: Notifications.AndroidNotificationPriority.HIGH, ...(Platform.OS === 'android' && { channelId: channel }), data: { reminderId: id, hour, minute } },
-      trigger: { date: when },
+      content: { title, body, sound: true },
+      trigger: { date: when, channelId: channel },
     });
+    logNotificationPlanned('DailyNext', title, when);
     return nid;
   } catch (e) { console.error('❌ scheduleDailyNext error:', e); return null; }
 }
 
 export async function scheduleOneTimeNotification(title: string, body: string, date: Date, channel: 'reminders' | 'cycle' = 'cycle'): Promise<string | null> {
   try {
-    if (date <= new Date()) return null;
+    if (date <= new Date()) { logNotificationPlanned('OneTime', title, null); return null; }
     const nid = await Notifications.scheduleNotificationAsync({
-      content: { title, body, sound: 'default', priority: Notifications.AndroidNotificationPriority.HIGH, ...(Platform.OS === 'android' && { channelId: channel }) },
-      trigger: { date },
+      content: { title, body, sound: true },
+      trigger: { date, channelId: channel },
     });
+    logNotificationPlanned('OneTime', title, date);
     return nid;
   } catch (e) { console.error('❌ scheduleOneTimeNotification error:', e); return null; }
-}
-
-// Auto-reschedule daily reminders after they fire (on receive or when user interacts)
-export function setupDailyAutoReschedule() {
-  if (listenersBound) return; // prevent multiple
-  try {
-    Notifications.addNotificationReceivedListener(async (n) => {
-      try {
-        const d: any = n.request.content.data || {};
-        if (d && d.reminderId && typeof d.hour === 'number' && typeof d.minute === 'number') {
-          const when = computeNextOccurrence(d.hour, d.minute);
-          await Notifications.scheduleNotificationAsync({
-            content: { ...n.request.content, data: d },
-            trigger: { date: when },
-          });
-        }
-      } catch (e) { console.warn('reschedule(received) failed', e); }
-    });
-    Notifications.addNotificationResponseReceivedListener(async (resp) => {
-      try {
-        const d: any = resp.notification.request.content.data || {};
-        if (d && d.reminderId && typeof d.hour === 'number' && typeof d.minute === 'number') {
-          const when = computeNextOccurrence(d.hour, d.minute);
-          await Notifications.scheduleNotificationAsync({
-            content: { ...resp.notification.request.content, data: d },
-            trigger: { date: when },
-          });
-        }
-      } catch (e) { console.warn('reschedule(response) failed', e); }
-    });
-    listenersBound = true;
-  } catch {}
 }
 
 export async function cancelNotification(notificationId: string): Promise<void> {
