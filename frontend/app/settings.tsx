@@ -80,7 +80,64 @@ export default function SettingsScreen() {
     setReminderTimes(times);
   }, [state.reminders]);
 
-  async function seedDefaults() {
+  async function saveCustomReminder() {
+    const currentCustom = state.reminders.filter(r => !!r.label).length;
+    if (currentCustom >= 10) {
+      Alert.alert(
+        state.language==='de'?'Limit erreicht':(state.language==='pl'?'Limit osiągnięty':'Limit reached'), 
+        state.language==='de'?'Maximal 10 eigene Erinnerungen.':(state.language==='pl'?'Maks. 10 własnych przypomnień.':'Maximum 10 custom reminders.')
+      );
+      return;
+    }
+    
+    if (!customLabel.trim()) {
+      Alert.alert(state.language==='de'?'Bitte alle Felder ausfüllen':(state.language==='pl'?'Proszę wypełnić wszystkie pola':'Please fill all fields'));
+      return;
+    }
+    
+    const initialized = await initializeNotifications();
+    if (!initialized) {
+      Alert.alert('Fehler', 'Benachrichtigungen konnten nicht initialisiert werden.');
+      return;
+    }
+    
+    const id = `custom_${Date.now()}`;
+    const hour = customTime.getHours();
+    const minute = customTime.getMinutes();
+    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    
+    const notifId = await scheduleDailyReminder(
+      id, 
+      customLabel.trim(), 
+      'Custom reminder', 
+      hour, 
+      minute,
+      'reminders'
+    );
+    
+    if (notifId) {
+      state.addReminder({ 
+        id, 
+        type: 'custom', 
+        label: customLabel.trim(), 
+        time: timeString, 
+        enabled: true 
+      });
+      state.setNotificationMeta(id, { 
+        id: notifId, 
+        time: timeString 
+      });
+      
+      // Update local state
+      setReminderTimes(prev => ({ ...prev, [id]: customTime }));
+      
+      setCustomMode(false);
+      setCustomLabel('');
+      setCustomTime(new Date());
+      
+      Alert.alert(state.language==='de'?'Gespeichert':(state.language==='pl'?'Zapisano':'Saved'));
+    }
+  }
     console.log('🌱 Creating default reminders...');
     
     const initialized = await initializeNotifications();
