@@ -143,12 +143,29 @@ export default function SettingsScreen() {
     const r = state.reminders.find(x=>x.id===id);
     if (!r) return;
     if (enabled) {
-      await ensureNotificationPermissions();
-      await ensureAndroidChannel();
+      const initialized = await initializeNotifications();
+      if (!initialized) {
+        Alert.alert('Fehler', 'Benachrichtigungen konnten nicht initialisiert werden.');
+        return;
+      }
+      
       const title = reminderLabel(r.type, state.language as any, r.label);
-      const notifId = await scheduleDailyReminder(id, title, state.language==='de'?'Zeit für eine Aktion':(state.language==='pl'?'Czas na działanie':'Time for an action'), timeInputs[id] || r.time, r.type === 'pills_morning' || r.type === 'pills_evening');
-      state.updateReminder(id, { enabled: true, time: timeInputs[id] || r.time });
-      state.setNotificationMeta(id, { id: notifId || '', time: timeInputs[id] || r.time });
+      const timeData = parseHHMM(r.time);
+      if (!timeData) return;
+      
+      const notifId = await scheduleDailyReminder(
+        id, 
+        title, 
+        state.language==='de'?'Zeit für eine Aktion':(state.language==='pl'?'Czas na działanie':'Time for an action'), 
+        timeData.hour, 
+        timeData.minute,
+        'reminders'
+      );
+      
+      if (notifId) {
+        state.updateReminder(id, { enabled: true });
+        state.setNotificationMeta(id, { id: notifId, time: r.time });
+      }
     } else {
       const meta = state.notificationMeta[id];
       await cancelNotification(meta?.id);
