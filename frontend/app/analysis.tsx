@@ -164,6 +164,8 @@ export default function AnalysisScreen() {
           <View style={{ marginTop: 6, gap: 6 }}>
             <Text style={{ color: colors.muted }}>Hydration ↔ Gewicht (Δ nächster Tag): r = {correlations.corrWaterWeight.toFixed(2)}</Text>
             <Text style={{ color: colors.muted }}>Sport ↔ Stimmung: r = {correlations.corrSportMood.toFixed(2)}</Text>
+            <Text style={{ color: colors.muted }}>Kaffee ↔ Stimmung: r = {correlations.corrCoffeeMood.toFixed(2)}</Text>
+            <Text style={{ color: colors.muted }}>Kaffee ↔ Schlaf: r = {correlations.corrCoffeeSleep.toFixed(2)}</Text>
           </View>
         </View>
 

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Image, View, Text } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { initializeNotifications } from '../src/utils/notifications';
 import { scheduleCycleNotifications } from '../src/utils/cycleNotifications';
 import { useAppStore } from "../src/store/useStore";
@@ -13,6 +14,7 @@ export default function RootLayout() {
   const theme = useAppStore((s) => s.theme);
   const barStyle = theme === "pink_vibrant" ? "light" : "dark";
   const bg = theme === 'pink_vibrant' ? '#1b0b12' : '#fde7ef';
+  const router = useRouter();
 
   const [bootVisible, setBootVisible] = useState(true);
   useEffect(() => { const t = setTimeout(() => setBootVisible(false), 1200); return () => clearTimeout(t); }, []);
@@ -29,6 +31,18 @@ export default function RootLayout() {
       }
     })();
   }, []);
+
+  // Handle notification taps -> deep link to route if provided
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      try {
+        const data: any = response?.notification?.request?.content?.data || {};
+        const route = typeof data.openRoute === 'string' ? data.openRoute : '';
+        if (route) router.push(route as any);
+      } catch {}
+    });
+    return () => { sub.remove(); };
+  }, [router]);
 
   return (
     <>

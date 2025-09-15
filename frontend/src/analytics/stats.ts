@@ -136,15 +136,14 @@ export function estimateETAtoTarget(currentWeight: number|undefined, targetWeigh
 
 export function computeSimpleCorrelations(days: Record<string, DayData>) {
   const arr = toSortedDays(days);
-  // Hydration (Wasser in ml approximiert durch Becher) vs. Gewichtsdifferenz am Folgetag
+  // Hydration (Wasser) vs. ΔGewicht nächster Tag
   const water: number[] = [];
   const dWeight: number[] = [];
   for (let i=0;i<arr.length-1;i++) {
     const today = arr[i]; const next = arr[i+1];
     const cups = Number(today.drinks?.water ?? 0);
-    const intake = cups; // relative Skala
     if (typeof next.weight === 'number' && typeof today.weight === 'number') {
-      water.push(intake);
+      water.push(cups);
       dWeight.push(next.weight - today.weight);
     }
   }
@@ -163,12 +162,23 @@ export function computeSimpleCorrelations(days: Record<string, DayData>) {
   // Sport (boolean) vs. Stimmung (same day)
   const sports: number[] = [];
   const mood: number[] = [];
+  // Kaffee vs. Stimmung/Schlaf (same day)
+  const coffees: number[] = [];
+  const mood2: number[] = [];
+  const sleep2: number[] = [];
   for (const d of arr) {
     const s = d.drinks?.sport ? 1 : 0;
-    const logMood = (d as any).mood ?? undefined; // falls direkt am DayData gespeichert (oder via cycleLogs separat)
+    const logMood = (d as any).mood ?? undefined;
+    const logSleep = (d as any).sleep ?? undefined;
     if (typeof logMood === 'number') { sports.push(s); mood.push(logMood); }
+    if (typeof d.drinks?.coffee === 'number') {
+      if (typeof logMood === 'number') { coffees.push(d.drinks.coffee); mood2.push(logMood); }
+      if (typeof logSleep === 'number') { coffees.push(d.drinks.coffee); sleep2.push(logSleep); }
+    }
   }
   const corrSportMood = corr(sports, mood);
+  const corrCoffeeMood = corr(coffees.slice(0, mood2.length), mood2);
+  const corrCoffeeSleep = corr(coffees.slice(0, sleep2.length), sleep2);
 
-  return { corrWaterWeight, corrSportMood };
+  return { corrWaterWeight, corrSportMood, corrCoffeeMood, corrCoffeeSleep };
 }
