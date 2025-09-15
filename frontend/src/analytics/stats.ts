@@ -76,8 +76,8 @@ export function computePremiumInsights(days: Record<string, DayData>, lng: 'de'|
     const med = sorted[Math.floor(sorted.length / 2)] || 0;
     const high = last14.filter((x) => x > med * 1.5).length;
     const low = last14.filter((x) => x < med * 0.5).length;
-    if (high > 0) tips.push(lng==='de' ? `Mehrere sehr hohe Trinktage (>${(med*1.5).toFixed(1)}) erkannt.` : `Several very high water days (>${(med*1.5).toFixed(1)}) detected.`);
-    if (low > 0) tips.push(lng==='de' ? `Mehrere sehr niedrige Trinktage (<${(med*0.5).toFixed(1)}) erkannt.` : `Several very low water days (<${(med*0.5).toFixed(1)}) detected.`);
+    if (high > 0) tips.push(lng==='de' ? `Mehrere sehr hohe Trinktage (> ${(med*1.5).toFixed(1)}) erkannt.` : `Several very high water days (> ${(med*1.5).toFixed(1)}) detected.`);
+    if (low > 0) tips.push(lng==='de' ? `Mehrere sehr niedrige Trinktage (< ${(med*0.5).toFixed(1)}) erkannt.` : `Several very low water days (< ${(med*0.5).toFixed(1)}) detected.`);
   }
 
   // Adhärenz-Score (letzte 7 Tage)
@@ -94,4 +94,81 @@ export function computePremiumInsights(days: Record<string, DayData>, lng: 'de'|
   tips.push(lng==='de' ? `Ø Adhärenz (7T): ${avgScore}/100` : `Avg adherence (7d): ${avgScore}/100`);
 
   return tips;
+}
+
+// --- Neue Analysen: Linearer Trend, R^2, Plateau, Korrelationen ---
+export function computeWeightTrendLR(days: Record<string, DayData>, periodDays = 14) {
+  const arr = toSortedDays(days).filter(d => typeof d.weight === 'number');
+  const sub = arr.slice(-periodDays);
+  if (sub.length < 2) return { slopePerDay: 0, r2: 0, delta: 0 };
+  const n = sub.length;
+  // x = 0..n-1, y = weight
+  let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0;
+  for (let i=0;i<n;i++) { const x=i; const y=sub[i].weight!; sumX+=x; sumY+=y; sumXX+=x*x; sumXY+=x*y; }
+  const denom = (n*sumXX - sumX*sumX) || 1;
+  const slope = (n*sumXY - sumX*sumY) / denom;
+  // r^2
+  const meanY = sumY / n;
+  let ssTot = 0, ssRes = 0;
+  for (let i=0;i<n;i++) { const x=i; const y=sub[i].weight!; const yHat = (slope * x) + (meanY - slope * ((n-1)/2)); ssTot += (y-meanY)**2; ssRes += (y-yHat)**2; }
+  const r2 = ssTot === 0 ? 0 : Math.max(0, 1 - (ssRes/ssTot));
+  const delta = sub[sub.length-1].weight! - sub[0].weight!;
+  return { slopePerDay: slope, r2, delta };
+}
+
+export function detectPlateau(days: Record<string, DayData>, windowDays = 7, epsilonKg = 0.1) {
+  const arr = toSortedDays(days).filter(d => typeof d.weight === 'number');
+  const sub = arr.slice(-windowDays);
+  if (sub.length < 2) return false;
+  const delta = Math.abs(sub[sub.length-1].weight! - sub[0].weight!);
+  return delta < epsilonKg; // kaum Veränderung
+}
+
+export function estimateETAtoTarget(currentWeight: number|undefined, targetWeight: number|undefined, slopePerDay: number) {
+  if (typeof currentWeight !== 'number' || typeof targetWeight !== 'number' || !isFinite(slopePerDay) || slopePerDay === 0) return null;
+  const remaining = currentWeight - targetWeight; // kg
+  const daily = Math.abs(slopePerDay);
+  if (daily <= 0) return null;
+  const days = Math.ceil(Math.max(0, remaining) / daily);
+  const eta = new Date(); eta.setDate(eta.getDate() + days);
+  return { days, eta };
+}
+
+export function computeSimpleCorrelations(days: Record<string, DayData>) {
+  const arr = toSortedDays(days);
+  // Hydration (Wasser in ml approximiert durch Becher) vs. Gewichtsdifferenz am Folgetag
+  const water: number[] = [];
+  const dWeight: number[] = [];
+  for (let i=0;i<arr.length-1;i++) {
+    const today = arr[i]; const next = arr[i+1];
+    const cups = Number(today.drinks?.water ?? 0);
+    const intake = cups; // relative Skala
+    if (typeof next.weight === 'number' && typeof today.weight === 'number') {
+      water.push(intake);
+      dWeight.push(next.weight - today.weight);
+    }
+  }
+  const corr = (xs: number[], ys: number[]) => {
+    const n = Math.min(xs.length, ys.length);
+    if (n < 5) return 0;
+    let sx=0, sy=0, sxx=0, syy=0, sxy=0;
+    for (let i=0;i<n;i++){ const x=xs[i], y=ys[i]; sx+=x; sy+=y; sxx+=x*x; syy+=y*y; sxy+=x*y; }
+    const cov = (sxy/n) - (sx/n)*(sy/n);
+    const vx = (sxx/n) - (sx/n)**2; const vy = (syy/n) - (sy/n)**2;
+    const denom = Math.sqrt(Math.max(0,vx)*Math.max(0,vy)) || 1;
+    return Math.max(-1, Math.min(1, cov/denom));
+  };
+  const corrWaterWeight = corr(water, dWeight);
+
+  // Sport (boolean) vs. Stimmung (same day)
+  const sports: number[] = [];
+  const mood: number[] = [];
+  for (const d of arr) {
+    const s = d.drinks?.sport ? 1 : 0;
+    const logMood = (d as any).mood ?? undefined; // falls direkt am DayData gespeichert (oder via cycleLogs separat)
+    if (typeof logMood === 'number') { sports.push(s); mood.push(logMood); }
+  }
+  const corrSportMood = corr(sports, mood);
+
+  return { corrWaterWeight, corrSportMood };
 }

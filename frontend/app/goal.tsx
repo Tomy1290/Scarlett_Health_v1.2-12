@@ -8,6 +8,7 @@ import { useAppStore, useLevel } from '../src/store/useStore';
 import { toKey } from '../src/utils/date';
 import { LineChart } from 'react-native-gifted-charts';
 import { onlineMotivation } from '../src/ai/online';
+import { computeWeightTrendLR, estimateETAtoTarget } from '../src/analytics/stats';
 
 function useThemeColors(theme: string) {
   if (theme === 'pink_pastel') return { bg: '#fff0f5', card: '#ffe4ef', primary: '#d81b60', text: '#3a2f33', muted: '#8a6b75' };
@@ -81,19 +82,6 @@ export default function GoalScreen() {
   const dailyNeeded = useMemo(() => {
     if (typeof currentWeight !== 'number' || typeof targetW !== 'number' || daysRemaining <= 0) return undefined;
     const delta = currentWeight - targetW; return Math.max(0, delta / daysRemaining);
-  // Fetch short motivation for goal screen
-  React.useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        if (!state.aiInsightsEnabled) return;
-        const m = await onlineMotivation(state as any);
-        if (active) setMotivation(m);
-      } catch {}
-    })();
-    return () => { active = false; };
-  }, [state.language, state.days, state.goal]);
-
   }, [currentWeight, targetW, daysRemaining]);
 
   const progressPercent = useMemo(() => {
@@ -110,10 +98,11 @@ export default function GoalScreen() {
       title: 'Zielgewicht', save: 'Speichern', remove: 'Ziel entfernen', pickDate: 'Datum wählen', weight: 'Wunschgewicht (kg)', date: 'Zieldatum',
       info: 'Lege dein Zielgewicht und ein Datum fest. Wir schätzen Dauer, täglichen Bedarf und Fortschritt. Der Plan läuft ab dem Tag der Zielsetzung bis zum Zieldatum.',
       analysis: 'Analyse', trendEta: 'ETA (Trend)', daily: 'Täglich nötig', progress: 'Fortschritt', plan: 'Plan vs. Ist',
-      etaNa: 'Kein Trend erkennbar', day: 'Tag', days: 'Tage', start: 'Start', end: 'Ziel', paceAhead: 'Vor dem Plan', paceOn: 'Im Plan', paceBehind: 'Hinter dem Plan'
+      etaNa: 'Kein Trend erkennbar', day: 'Tag', days: 'Tage', start: 'Start', end: 'Ziel', paceAhead: 'Vor dem Plan', paceOn: 'Im Plan', paceBehind: 'Hinter dem Plan',
+      pace7: 'Pace (7 Tage)'
     };
-    const en: Record<string,string> = { title: 'Target weight', save: 'Save', remove: 'Remove target', pickDate: 'Pick date', weight: 'Target weight (kg)', date: 'Target date', info: 'Set your target weight and date. We estimate duration, daily need and progress. The plan runs from goal set date to target date.', analysis: 'Analysis', trendEta: 'ETA (trend)', daily: 'Daily needed', progress: 'Progress', plan: 'Plan vs. actual', etaNa: 'No trend visible', day: 'day', days: 'days', start: 'Start', end: 'Target', paceAhead: 'Ahead of plan', paceOn: 'On plan', paceBehind: 'Behind plan' };
-    const pl: Record<string,string> = { title: 'Waga docelowa', save: 'Zapisz', remove: 'Usuń cel', pickDate: 'Wybierz datę', weight: 'Waga docelowa (kg)', date: 'Data docelowa', info: 'Ustaw wagę i datę. Szacujemy czas, dzienne tempo i postęp. Plan biegnie od dnia ustawienia celu do daty docelowej.', analysis: 'Analiza', trendEta: 'ETA (trend)', daily: 'Dzienne wymagane', progress: 'Postęp', plan: 'Plan vs. stan', etaNa: 'Brak trendu', day: 'dzień', days: 'dni', start: 'Start', end: 'Cel', paceAhead: 'Przed planem', paceOn: 'Zgodnie z planem', paceBehind: 'Za planem' };
+    const en: Record<string,string> = { title: 'Target weight', save: 'Save', remove: 'Remove target', pickDate: 'Pick date', weight: 'Target weight (kg)', date: 'Target date', info: 'Set your target weight and date. We estimate duration, daily need and progress. The plan runs from goal set date to target date.', analysis: 'Analysis', trendEta: 'ETA (trend)', daily: 'Daily needed', progress: 'Progress', plan: 'Plan vs. actual', etaNa: 'No trend visible', day: 'day', days: 'days', start: 'Start', end: 'Target', paceAhead: 'Ahead of plan', paceOn: 'On plan', paceBehind: 'Behind plan', pace7: 'Pace (7 days)' };
+    const pl: Record<string,string> = { title: 'Waga docelowa', save: 'Zapisz', remove: 'Usuń cel', pickDate: 'Wybierz datę', weight: 'Waga docelowa (kg)', date: 'Data docelowa', info: 'Ustaw wagę i datę. Szacujemy czas, dzienne tempo i postęp. Plan biegnie od dnia ustawienia celu do daty docelowej.', analysis: 'Analiza', trendEta: 'ETA (trend)', daily: 'Dzienne wymagane', progress: 'Postęp', plan: 'Plan vs. stan', etaNa: 'Brak trendu', day: 'dzień', days: 'dni', start: 'Start', end: 'Cel', paceAhead: 'Przed planem', paceOn: 'Zgodnie z planem', paceBehind: 'Za planem', pace7: 'Tempo (7 dni)'};
     const map = state.language==='en'?en:(state.language==='pl'?pl:de); return map[key] || key;
   }
 
@@ -131,6 +120,40 @@ export default function GoalScreen() {
     state.setGoal({ targetWeight: tw, targetDate: toKey(targetDate), startWeight: startW, startDate: toKey(new Date()), active: true });
   }
   function clearGoal() { state.removeGoal(); }
+
+  // Motivation for goal screen
+  React.useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        if (!state.aiInsightsEnabled) return;
+        const m = await onlineMotivation(state as any);
+        if (active) setMotivation(m);
+      } catch {}
+    })();
+    return () => { active = false; };
+  }, [state.language, state.days, state.goal]);
+
+  // Trend-based ETA
+  const trend = useMemo(() => computeWeightTrendLR(state.days, 14), [state.days]);
+  const etaObj = useMemo(() => estimateETAtoTarget(currentWeight, targetW, trend.slopePerDay || 0), [currentWeight, targetW, trend.slopePerDay]);
+
+  // Pace chips (last up to 7 days)
+  const paceChips = useMemo(() => {
+    const chips: { key: string; color: string }[] = [];
+    const lookback = Math.min(7, todayIdx + 1);
+    for (let i = lookback - 1; i >= 0; i--) {
+      const dayKey = daysArr[i];
+      const planned = planSeries[i]?.value;
+      const actual = (state.days as any)[dayKey]?.weight;
+      if (typeof planned === 'number' && typeof actual === 'number') {
+        const diff = actual - planned;
+        const color = diff <= -0.2 ? '#2bb673' : Math.abs(diff) <= 0.2 ? '#FFC107' : '#e53935';
+        chips.push({ key: dayKey, color });
+      }
+    }
+    return chips;
+  }, [daysArr, planSeries, state.days, todayIdx]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -175,13 +198,6 @@ export default function GoalScreen() {
               {state.goal ? (
                 <TouchableOpacity onPress={clearGoal} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('remove')}</Text></TouchableOpacity>
               ) : null}
-
-          {state.aiInsightsEnabled && !!motivation ? (
-            <View style={{ marginTop: 8 }}>
-              <Text style={{ color: colors.text }}>{motivation}</Text>
-            </View>
-          ) : null}
-
               <TouchableOpacity onPress={saveGoal} style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.primary }]}><Text style={{ color: '#fff' }}>{t('save')}</Text></TouchableOpacity>
             </View>
           </View>
@@ -201,6 +217,13 @@ export default function GoalScreen() {
               </View>
               <Text style={{ color: colors.muted }}>{t('daily')}: {typeof dailyNeeded === 'number' ? `${dailyNeeded.toFixed(2)} kg/${t('day')}` : '—'}</Text>
               <Text style={{ color: colors.muted }}>{paceText()}</Text>
+              <Text style={{ color: colors.muted }}>{t('trendEta')}: {etaObj ? `${etaObj.days} ${t('days')} → ${etaObj.eta.toLocaleDateString(state.language==='en'?'en-GB':(state.language==='pl'?'pl-PL':'de-DE'))}` : t('etaNa')}</Text>
+              {/* Pace chips */}
+              <View style={{ flexDirection: 'row', gap: 4, marginTop: 6 }}>
+                {paceChips.map(c => (
+                  <View key={c.key} style={{ width: 14, height: 8, borderRadius: 2, backgroundColor: c.color }} />
+                ))}
+              </View>
             </View>
           </View>
 

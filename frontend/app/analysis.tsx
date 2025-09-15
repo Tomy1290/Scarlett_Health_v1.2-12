@@ -7,6 +7,7 @@ import { useAppStore, useLevel } from '../src/store/useStore';
 import { LineChart } from 'react-native-gifted-charts';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { onlineAnalysis } from '../src/ai/online';
+import { computeWeightTrendLR, detectPlateau, computeSimpleCorrelations } from '../src/analytics/stats';
 
 function useThemeColors(theme: string) {
   if (theme === 'pink_pastel') return { bg: '#fff0f5', card: '#ffe4ef', primary: '#d81b60', text: '#3a2f33', muted: '#8a6b75' };
@@ -49,7 +50,7 @@ export default function AnalysisScreen() {
 
   const last14 = useMemo(() => weightArrAll.slice(-14), [weightArrAll]);
 
-  const t = (key: string) => { const de: Record<string, string> = { analysis: 'Analyse', weight: 'Gewichtsanalyse', app: 'Scarletts Gesundheitstracking', range7: '7 Tage', range14: '14 Tage', range30: '30 Tage', custom: 'Eigener Zeitraum', from: 'Von', to: 'Bis', weight_help: 'Wähle den Zeitraum und betrachte Trends.', insights: 'KI Insights', insights_help: 'Online-KI analysiert deine Daten kompakt.', aiultra: 'KI Pro+++ (Online)', aiultra_help: 'Online-Analyse mit personalisierten Tipps.' }; const en: Record<string, string> = { analysis: 'Analysis', weight: 'Weight analysis', app: "Scarlett’s Health Tracking", range7: '7 days', range14: '14 days', range30: '30 days', custom: 'Custom', from: 'From', to: 'To', weight_help: 'Select a range and see trends.', insights: 'AI insights', insights_help: 'Online AI gives compact insights.', aiultra: 'AI Pro+++ (online)', aiultra_help: 'Online analysis with personalized tips.' }; return (state.language === 'de' ? de : en)[key] || key; };
+  const t = (key: string) => { const de: Record<string, string> = { analysis: 'Analyse', weight: 'Gewichtsanalyse', app: 'Scarletts Gesundheitstracking', range7: '7 Tage', range14: '14 Tage', range30: '30 Tage', custom: 'Eigener Zeitraum', from: 'Von', to: 'Bis', weight_help: 'Wähle den Zeitraum und betrachte Trends.', insights: 'KI Insights', insights_help: 'Online-KI analysiert deine Daten kompakt.', aiultra: 'KI Pro+++ (Online)', aiultra_help: 'Online-Analyse mit personalisierten Tipps.', trend: 'Trend & Plateau', trend_help: 'Gewichts-Trend (14T) und Plateau-Erkennung.', corr: 'Korrelationen', corr_help: 'Einfache Zusammenhänge deiner Daten.' }; const en: Record<string, string> = { analysis: 'Analysis', weight: 'Weight analysis', app: "Scarlett’s Health Tracking", range7: '7 days', range14: '14 days', range30: '30 days', custom: 'Custom', from: 'From', to: 'To', weight_help: 'Select a range and see trends.', insights: 'AI insights', insights_help: 'Online AI gives compact insights.', aiultra: 'AI Pro+++ (online)', aiultra_help: 'Online analysis with personalized tips.', trend: 'Trend & plateau', trend_help: 'Weight trend (14d) and plateau detection.', corr: 'Correlations', corr_help: 'Simple relationships of your data.' }; return (state.language === 'de' ? de : en)[key] || key; };
 
   // Online AI insights
   const [aiText, setAiText] = useState<string>('');
@@ -69,6 +70,11 @@ export default function AnalysisScreen() {
     })();
     return () => { active = false; };
   }, [state.days, state.cycles, state.language]);
+
+  // Trend & Plateau (14 Tage)
+  const trend = useMemo(() => computeWeightTrendLR(state.days, 14), [state.days]);
+  const plateau = useMemo(() => detectPlateau(state.days, 7, 0.1), [state.days]);
+  const correlations = useMemo(() => computeSimpleCorrelations(state.days), [state.days]);
 
   const appTitle = t('app');
 
@@ -123,6 +129,42 @@ export default function AnalysisScreen() {
           ) : (
             <Text style={{ color: colors.muted, marginTop: 6 }}>Zu wenige Daten</Text>
           )}
+        </View>
+
+        {/* Trend & Plateau */}
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name='trending-down' size={18} color={colors.primary} />
+              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{t('trend')}</Text>
+            </View>
+            <TouchableOpacity onPress={() => toggleHelp('trend')}>
+              <Ionicons name='information-circle-outline' size={18} color={colors.muted} />
+            </TouchableOpacity>
+          </View>
+          {help.trend ? (<Text style={{ color: colors.muted, marginTop: 6 }}>{t('trend_help')}</Text>) : null}
+          <View style={{ marginTop: 6, gap: 6 }}>
+            <Text style={{ color: colors.muted }}>Slope (14T): {trend.slopePerDay.toFixed(3)} kg/Tag · R² {trend.r2.toFixed(2)}</Text>
+            <Text style={{ color: plateau ? '#e53935' : '#2bb673' }}>{plateau ? 'Plateau erkannt (7T ~ ±0,1 kg)' : 'Kein Plateau (7T)'} </Text>
+          </View>
+        </View>
+
+        {/* Korrelationen */}
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name='link' size={18} color={colors.primary} />
+              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{t('corr')}</Text>
+            </View>
+            <TouchableOpacity onPress={() => toggleHelp('corr')}>
+              <Ionicons name='information-circle-outline' size={18} color={colors.muted} />
+            </TouchableOpacity>
+          </View>
+          {help.corr ? (<Text style={{ color: colors.muted, marginTop: 6 }}>{t('corr_help')}</Text>) : null}
+          <View style={{ marginTop: 6, gap: 6 }}>
+            <Text style={{ color: colors.muted }}>Hydration ↔ Gewicht (Δ nächster Tag): r = {correlations.corrWaterWeight.toFixed(2)}</Text>
+            <Text style={{ color: colors.muted }}>Sport ↔ Stimmung: r = {correlations.corrSportMood.toFixed(2)}</Text>
+          </View>
         </View>
 
         {/* KI Insights (online) */}
