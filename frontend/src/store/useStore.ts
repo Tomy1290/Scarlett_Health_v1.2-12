@@ -251,11 +251,11 @@ export const useAppStore = create<AppState>()(
             const minus2f = new Date(start); minus2f.setDate(start.getDate() - 2);
             const title0f = get().language==='en' ? 'Fertile phase starts today' : (get().language==='pl'?'Płodna faza zaczyna się dziś':'Fruchtbare Phase ab heute');
             const title2f = get().language==='en' ? 'Fertile phase in 2 days' : (get().language==='pl'?'Płodna faza za 2 dni':'Fruchtbare Phase in 2 Tagen');
-            if (+minus2f &gt; +new Date()) {
+            if (+minus2f > +new Date()) {
               const id2f = await scheduleOneTimeNotification(title2f, '', minus2f, 'cycle');
               if (id2f) get().setNotificationMeta('cycle_fertile_minus2', { id: id2f });
             }
-            if (+start &gt; +new Date()) {
+            if (+start > +new Date()) {
               const id0f = await scheduleOneTimeNotification(title0f, '', start, 'cycle');
               if (id0f) get().setNotificationMeta('cycle_fertile_day0', { id: id0f });
             }
