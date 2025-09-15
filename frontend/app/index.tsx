@@ -11,6 +11,7 @@ import { toKey } from "../src/utils/date";
 import CelebrationOverlay from "../src/components/CelebrationOverlay";
 import { predictNextStart } from "../src/utils/cycle";
 import { onlineMotivation } from "../src/ai/online";
+import { computeWeightTrendLR, estimateETAtoTarget } from "../src/analytics/stats";
 
 function useThemeColors(theme: string) {
   if (theme === "pink_pastel") return { bg: "#fff0f5", card: "#ffe4ef", primary: "#d81b60", text: "#3a2f33", muted: "#8a6b75" };
@@ -73,9 +74,6 @@ export default function Home() {
   const weeklyEvent = useMemo(() => getCurrentWeeklyEvent(new Date()), []);
   const weeklyEventProgress = useMemo(() => computeEventProgress(dayKeys, state as any, weeklyEvent), [dayKeys, state.days, weeklyEvent.id]);
 
-  // Show motivation only for weight-related weekly events
-  const isWeightEvent = weeklyEvent && (weeklyEvent.id === 'weigh_4' || weeklyEvent.id === 'weigh_early_2' || weeklyEvent.id === 'perfect_2');
-
   // Motivation line (short)
   const [motivation, setMotivation] = useState<string>('');
   useEffect(() => {
@@ -85,6 +83,35 @@ export default function Home() {
     })();
     return () => { active = false; };
   }, [state.language, state.days, state.goal, weeklyEvent.id]);
+
+  const weeklyEventProgressState = weeklyEventProgress;
+  // Show motivation only for weight-related weekly events
+  const isWeightEvent = weeklyEvent && (weeklyEvent.id === 'weigh_4' || weeklyEvent.id === 'weigh_early_2' || weeklyEvent.id === 'perfect_2');
+
+  // Pace/ETA inline under weight card
+  const trend = useMemo(() => computeWeightTrendLR(state.days, 14), [state.days]);
+  const etaObj = useMemo(() => {
+    const g = state.goal;
+    if (!g || !g.active) return null;
+    const latest = getLatestWeightKg(state.days);
+    return estimateETAtoTarget(latest, g.targetWeight, trend.slopePerDay || 0);
+  }, [state.goal, state.days, trend.slopePerDay]);
+
+  function paceLabel() {
+    const g = state.goal; if (!g || !g.active) return '';
+    const start = new Date(g.startDate || toKey(new Date()));
+    const end = new Date(g.targetDate);
+    const totalDays = Math.max(1, Math.round((+end - +start)/(1000*60*60*24)));
+    const todayIdx = Math.max(0, Math.min(totalDays, Math.round((+new Date(toKey(new Date())) - +start)/(1000*60*60*24))));
+    const step = (g.startWeight - g.targetWeight) / totalDays;
+    const plannedToday = g.startWeight - step * todayIdx;
+    const cur = getLatestWeightKg(state.days);
+    if (typeof cur !== 'number') return '';
+    const diff = cur - plannedToday;
+    if (diff <= -0.2) return t('Vor dem Plan', 'Ahead of plan', 'Przed planem');
+    if (Math.abs(diff) <= 0.2) return t('Im Plan', 'On plan', 'Zgodnie z planem');
+    return t('Hinter dem Plan', 'Behind plan', 'Za planem');
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -289,6 +316,12 @@ export default function Home() {
           {state.aiInsightsEnabled && !!motivation ? (
             <Text style={{ color: colors.text, marginTop: 6 }}>{motivation}</Text>
           ) : null}
+          {/* Pace/ETA line */}
+          {state.goal?.active ? (
+            <Text style={{ color: colors.muted, marginTop: 4 }}>
+              {t('Pace', 'Pace', 'Tempo')}: {paceLabel()} {etaObj ? `· ETA ${etaObj.eta.toLocaleDateString(language==='en'?'en-GB':(language==='pl'?'pl-PL':'de-DE'))}` : ''}
+            </Text>
+          ) : null}
         </View>
 
         {/* Cycle */}
@@ -308,17 +341,17 @@ export default function Home() {
           ) : null}
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
             {state.cycles.find((c: any) => !c.end) ? (
-              <TouchableOpacity onPress={() => { state.endCycle(currentDate); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }} style={[styles.cta, { backgroundColor: colors.primary }]}>
+              <TouchableOpacity onPress={() => { state.endCycle(currentDate); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }} style={[styles.cta, { backgroundColor: colors.primary }]}> 
                 <Ionicons name='stop' size={16} color={'#fff'} />
                 <Text style={{ color: '#fff', marginLeft: 6 }}>{language==='de'?'Ende Periode':(language==='pl'?'Koniec okresu':'End period')}</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity onPress={() => { state.startCycle(currentDate); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }} style={[styles.cta, { backgroundColor: colors.primary }]}>
+              <TouchableOpacity onPress={() => { state.startCycle(currentDate); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }} style={[styles.cta, { backgroundColor: colors.primary }]}> 
                 <Ionicons name='play' size={16} color={'#fff'} />
                 <Text style={{ color: '#fff', marginLeft: 6 }}>{language==='de'?'Beginn Periode':(language==='pl'?'Start cyklu':'Start cycle')}</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={() => router.push('/cycle')} style={[styles.cta, { borderColor: colors.primary, borderWidth: 1 }]}>
+            <TouchableOpacity onPress={() => router.push('/cycle')} style={[styles.cta, { borderColor: colors.primary, borderWidth: 1 }]}> 
               <Ionicons name='calendar' size={16} color={colors.primary} />
               <Text style={{ color: colors.text, marginLeft: 6 }}>{t('Kalender', 'Calendar', 'Kalendarz')}</Text>
             </TouchableOpacity>
@@ -344,9 +377,9 @@ export default function Home() {
             <Text style={{ color: colors.muted, marginTop: 4 }}>{weeklyEvent.description(language === 'en' ? 'en' : 'de')}</Text>
             {isWeightEvent && !!motivation && <Text style={{ color: colors.text, marginTop: 4 }}>{motivation}</Text>}
             <View style={{ height: 6, backgroundColor: colors.bg, borderRadius: 3, overflow: 'hidden', marginTop: 6 }}>
-              <View style={{ width: `${weeklyEventProgress.percent}%`, height: 6, backgroundColor: weeklyEventProgress.completed ? '#2bb673' : colors.primary }} />
+              <View style={{ width: `${weeklyEventProgressState.percent}%`, height: 6, backgroundColor: weeklyEventProgressState.completed ? '#2bb673' : colors.primary }} />
             </View>
-            <Text style={{ color: colors.muted, marginTop: 4 }}>{weeklyEventProgress.percent}% {weeklyEventProgress.completed ? t('abgeschlossen', 'completed', 'ukończone') : ''}</Text>
+            <Text style={{ color: colors.muted, marginTop: 4 }}>{weeklyEventProgressState.percent}% {weeklyEventProgressState.completed ? t('abgeschlossen', 'completed', 'ukończone') : ''}</Text>
           </View>
         </View>
 
@@ -416,10 +449,10 @@ export default function Home() {
                 </View>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
-                <TouchableOpacity onPress={() => setWeightModal(false)} style={[styles.cta, { borderColor: colors.primary, borderWidth: 1 }]}>
+                <TouchableOpacity onPress={() => setWeightModal(false)} style={[styles.cta, { borderColor: colors.primary, borderWidth: 1 }]}> 
                   <Text style={{ color: colors.text }}>{t('Abbrechen', 'Cancel', 'Anuluj')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { const normalized = (weightInput || '').replace(',', '.'); const val = parseFloat(normalized); if (!isNaN(val) && val > 0) { setWeight(currentDate, val); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setWeightModal(false); } }} style={[styles.cta, { backgroundColor: colors.primary }]}>
+                <TouchableOpacity onPress={() => { const normalized = (weightInput || '').replace(',', '.'); const val = parseFloat(normalized); if (!isNaN(val) && val > 0) { setWeight(currentDate, val); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setWeightModal(false); } }} style={[styles.cta, { backgroundColor: colors.primary }]}> 
                   <Text style={{ color: '#fff' }}>{t('Speichern', 'Save', 'Zapisz')}</Text>
                 </TouchableOpacity>
               </View>

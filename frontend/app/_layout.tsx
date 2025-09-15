@@ -7,6 +7,7 @@ import { scheduleCycleNotifications } from '../src/utils/cycleNotifications';
 import { useAppStore } from "../src/store/useStore";
 import { registerReminderRepairBackgroundTask } from "../src/utils/reminderRepair";
 import { scheduleGoalReminderIfNeeded } from "../src/utils/goalReminder";
+import { scheduleWeeklyDigestIfNeeded } from "../src/utils/weeklyDigest";
 
 export default function RootLayout() {
   const theme = useAppStore((s) => s.theme);
@@ -24,6 +25,7 @@ export default function RootLayout() {
         await scheduleCycleNotifications(state);
         try { await registerReminderRepairBackgroundTask(30 * 60); } catch {}
         try { await scheduleGoalReminderIfNeeded(state as any, true); } catch {}
+        try { await scheduleWeeklyDigestIfNeeded(state as any, true); } catch {}
       }
     })();
   }, []);
