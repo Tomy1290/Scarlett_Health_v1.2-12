@@ -121,7 +121,7 @@ export async function scheduleDailyNext(
   } catch (e) { console.error('❌ scheduleDailyNext error:', e); return null; }
 }
 
-export async function scheduleOneTimeNotification(title: string, body: string, date: Date, channel: 'reminders' | 'cycle' = 'cycle'): Promise<string | null> {
+export async function scheduleOneTimeNotification(title: string, body: string, date: Date, channel: 'reminders' | 'cycle' = 'cycle', data?: Record<string, any>): Promise<string | null> {
   try {
     if (date <= new Date()) { logNotificationPlanned('OneTime', title, null); return null; }
     const nid = await Notifications.scheduleNotificationAsync({
