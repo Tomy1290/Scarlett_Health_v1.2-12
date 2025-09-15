@@ -37,6 +37,7 @@ export default function GoalScreen() {
   const [targetDate, setTargetDate] = useState<Date>(existingGoal ? new Date(existingGoal.targetDate) : new Date(Date.now() + 1000*60*60*24*30));
   const [showPicker, setShowPicker] = useState(false);
   const [help, setHelp] = useState<Record<string, boolean>>({ info: true });
+  const [motivation, setMotivation] = useState<string>('');
 
   const startDateKey = useMemo(() => existingGoal?.startDate || toKey(new Date()), [existingGoal?.startDate]);
   const startWeight = useMemo(() => existingGoal?.startWeight ?? latestWeight ?? undefined, [existingGoal?.startWeight, latestWeight]);
