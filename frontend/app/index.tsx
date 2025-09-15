@@ -333,9 +333,26 @@ export default function Home() {
           ) : null}
           {/* Pace/ETA line */}
           {state.goal?.active ? (
-            <Text style={{ color: colors.muted, marginTop: 4 }}>
-              {t('Pace', 'Pace', 'Tempo')}: {paceLabel()} {etaObj ? `· ETA ${etaObj.eta.toLocaleDateString(language==='en'?'en-GB':(language==='pl'?'pl-PL':'de-DE'))}` : ''}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, flexWrap: 'wrap', gap: 8 }}>
+              {/* Pace badge */}
+              {(() => { const p = paceState(); const bg = p==='ahead'?'#2bb673':(p==='on'?'#FFC107':'#e53935'); return (
+                <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: bg }}>
+                  <Text style={{ color: p==='on' ? '#000' : '#fff', fontWeight: '700' }}>{t('Pace', 'Pace', 'Tempo')}: {paceLabel()}</Text>
+                </View>
+              ); })()}
+              {/* ETA badge */}
+              {etaObj ? (
+                <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: '#607D8B' }}>
+                  <Text style={{ color: '#fff', fontWeight: '700' }}>ETA {etaObj.eta.toLocaleDateString(language==='en'?'en-GB':(language==='pl'?'pl-PL':'de-DE'))}</Text>
+                </View>
+              ) : null}
+              {/* Trend warning */}
+              {(() => { const slope = (typeof trend.slopePerDay==='number'?trend.slopePerDay:0); if (!isFinite(slope)) return null; if (slope >= -0.02) { return (
+                <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, backgroundColor: '#ffebee' }}>
+                  <Text style={{ color: '#c62828' }}>{t('Trend sehr flach – prüfe Plan (Wasser, Ernährung, Bewegung).', 'Trend very flat – check plan (water, nutrition, activity).', 'Trend bardzo płaski – sprawdź plan (woda, dieta, aktywność).')}</Text>
+                </View>
+              ); } return null; })()}
+            </View>
           ) : null}
         </View>
 
