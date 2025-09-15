@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert, Switch, TextInput } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert, Switch, TextInput, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
@@ -54,8 +54,8 @@ export default function SettingsScreen() {
   const [reminderTimes, setReminderTimes] = useState<Record<string, string>>({});
   const [debugSwitch, setDebugSwitch] = useState(false);
 
-  useEffect(() => {
-    const times: Record<string, string> = {};
+  useEffect(() =&gt; {
+    const times: Record&lt;string, string&gt; = {};
     if (state.reminders && Array.isArray(state.reminders)) {
       for (const r of state.reminders) {
         if (!r || !r.id) continue;
@@ -74,49 +74,52 @@ export default function SettingsScreen() {
   async function importData() {/* unchanged */}
 
   const desiredOrder = ['pills_morning','pills_evening','weight','water','sport'];
-  const sortedReminders = [...state.reminders].sort((a,b) => { const ai = desiredOrder.indexOf(a.type); const bi = desiredOrder.indexOf(b.type); const aIdx = ai < 0 ? 999 : ai; const bIdx = bi < 0 ? 999 : bi; return aIdx - bIdx; });
+  const sortedReminders = [...state.reminders].sort((a,b) =&gt; { const ai = desiredOrder.indexOf(a.type); const bi = desiredOrder.indexOf(b.type); const aIdx = ai &lt; 0 ? 999 : ai; const bIdx = bi &lt; 0 ? 999 : bi; return aIdx - bIdx; });
+
+  const FlagButton = ({ code }: { code: 'de'|'en'|'pl' }) =&gt; {
+    const active = state.language === code;
+    return (
+      &lt;TouchableOpacity onPress={() =&gt; state.setLanguage(code)} accessibilityLabel={code==='de'?'Deutsch':(code==='pl'?'Polski':'English')} style={[styles.flagBtn, { borderColor: active ? colors.primary : 'transparent' }]}&gt;
+        &lt;Flag code={code} size={44} /&gt;
+      &lt;/TouchableOpacity&gt;
+    );
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={[styles.header, { backgroundColor: colors.card, paddingVertical: 16 }]}> 
-        <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn} accessibilityLabel='Zurück'>
-          <Ionicons name='chevron-back' size={26} color={colors.text} />
-        </TouchableOpacity>
-        <View style={{ alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name='star' size={16} color={colors.primary} />
-            <Text style={[styles.appTitle, { color: colors.text, marginHorizontal: 6 }]}>{appTitle}</Text>
-            <Ionicons name='star' size={16} color={colors.primary} />
-          </View>
-          <Text style={[styles.title, { color: colors.muted }]}>{state.language==='de'?'Einstellungen':(state.language==='pl'?'Ustawienia':'Settings')}</Text>
-        </View>
-        <View style={{ width: 40 }} />
-      </View>
+    &lt;SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}&gt;
+      &lt;View style={[styles.header, { backgroundColor: colors.card, paddingVertical: 16 }]}&gt; 
+        &lt;TouchableOpacity onPress={() =&gt; router.back()} style={styles.iconBtn} accessibilityLabel='Zurück'&gt;
+          &lt;Ionicons name='chevron-back' size={26} color={colors.text} /&gt;
+        &lt;/TouchableOpacity&gt;
+        &lt;View style={{ alignItems: 'center' }}&gt;
+          &lt;View style={{ flexDirection: 'row', alignItems: 'center' }}&gt;
+            &lt;Ionicons name='star' size={16} color={colors.primary} /&gt;
+            &lt;Text style={[styles.appTitle, { color: colors.text, marginHorizontal: 6 }]}&gt;{appTitle}&lt;/Text&gt;
+            &lt;Ionicons name='star' size={16} color={colors.primary} /&gt;
+          &lt;/View&gt;
+          &lt;Text style={[styles.title, { color: colors.muted }]}&gt;{state.language==='de'?'Einstellungen':(state.language==='pl'?'Ustawienia':'Settings')}&lt;/Text&gt;
+        &lt;/View&gt;
+        &lt;View style={{ width: 40 }} /&gt;
+      &lt;/View&gt;
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+      &lt;ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}&gt;
         {/* Language flags */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}> 
-          <Text style={{ color: colors.text, fontWeight: '700', marginBottom: 8 }}>{state.language==='de'?'Sprache':(state.language==='pl'?'Język':'Language')}</Text>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity onPress={() => state.setLanguage('de')} accessibilityLabel='Deutsch'>
-              <Flag code='de' size={36} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => state.setLanguage('en')} accessibilityLabel='English'>
-              <Flag code='en' size={36} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => state.setLanguage('pl')} accessibilityLabel='Polski'>
-              <Flag code='pl' size={36} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        &lt;View style={[styles.card, { backgroundColor: colors.card }]}&gt; 
+          &lt;Text style={{ color: colors.text, fontWeight: '700', marginBottom: 8 }}&gt;{state.language==='de'?'Sprache':(state.language==='pl'?'Język':'Language')}&lt;/Text&gt;
+          &lt;View style={{ flexDirection: 'row', gap: 12 }}&gt;
+            &lt;FlagButton code='de' /&gt;
+            &lt;FlagButton code='en' /&gt;
+            &lt;FlagButton code='pl' /&gt;
+          &lt;/View&gt;
+        &lt;/View&gt;
 
         {/* Theme */}
         {/* unchanged block below */}
 
         {/* Drinks settings, Reminders, Fotos (Gewicht), KI, Debug, App info */}
         {/* unchanged existing blocks remain as implemented */}
-      </ScrollView>
-    </SafeAreaView>
+      &lt;/ScrollView&gt;
+    &lt;/SafeAreaView&gt;
   );
 }
 
@@ -127,4 +130,5 @@ const styles = StyleSheet.create({
   iconBtn: { padding: 8 },
   card: { borderRadius: 12, padding: 12 },
   badge: { borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  flagBtn: { padding: 4, borderRadius: 10, borderWidth: 2 },
 });
