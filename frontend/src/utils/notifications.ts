@@ -57,7 +57,7 @@ export async function setupAndroidChannels(): Promise<void> {
   } catch (error) { console.error('❌ Error setting up Android channels:', error); }
 }
 
-export async function initializeNotifications(): Promise&lt;boolean&gt; {
+export async function initializeNotifications(): Promise<boolean&gt; {
   try {
     const hasPermissions = await requestNotificationPermissions();
     if (!hasPermissions) return false;
@@ -71,7 +71,7 @@ export function computeNextOccurrence(hour: number, minute: number): Date {
   const now = new Date();
   const next = new Date();
   next.setHours(hour, minute, 0, 0);
-  if (+next &lt;= +now) { next.setDate(next.getDate() + 1); }
+  if (+next <= +now) { next.setDate(next.getDate() + 1); }
   return next;
 }
 
@@ -90,7 +90,7 @@ export async function scheduleDailyNext(
   hour: number,
   minute: number,
   channel: 'reminders' | 'cycle' = 'reminders'
-): Promise&lt;string | null&gt; {
+): Promise<string | null&gt; {
   try {
     const when = computeNextOccurrence(hour, minute);
     const now = new Date();
@@ -98,7 +98,7 @@ export async function scheduleDailyNext(
     // HyperOS/MIUI devices have issues with date triggers - use seconds instead
     if (isHyperOSLike()) {
       let diffSec = Math.ceil((+when - +now) / 1000);
-      if (diffSec &lt; 60) diffSec = 60; // mindestens 60 Sekunden in die Zukunft
+      if (diffSec < 60) diffSec = 60; // mindestens 60 Sekunden in die Zukunft
       const nid = await Notifications.scheduleNotificationAsync({
         content: { title, body, sound: true, ...(Platform.OS === 'android' &amp;&amp; { channelId: channel }) },
         trigger: { seconds: diffSec },
@@ -119,9 +119,9 @@ export async function scheduleDailyNext(
   } catch (e) { console.error('❌ scheduleDailyNext error:', e); return null; }
 }
 
-export async function scheduleOneTimeNotification(title: string, body: string, date: Date, channel: 'reminders' | 'cycle' = 'cycle'): Promise&lt;string | null&gt; {
+export async function scheduleOneTimeNotification(title: string, body: string, date: Date, channel: 'reminders' | 'cycle' = 'cycle'): Promise<string | null&gt; {
   try {
-    if (date &lt;= new Date()) { logNotificationPlanned('OneTime', title, null); return null; }
+    if (date <= new Date()) { logNotificationPlanned('OneTime', title, null); return null; }
     const nid = await Notifications.scheduleNotificationAsync({
       content: { title, body, sound: true, ...(Platform.OS === 'android' &amp;&amp; { channelId: channel }) },
       trigger: { date },
@@ -137,7 +137,7 @@ export async function cancelNotification(notificationId: string): Promise<void> 
 
 export async function cancelAllNotifications(): Promise<void> { try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch (e) { console.error('❌ cancelAllNotifications error:', e);} }
 
-export async function getScheduledNotifications(): Promise&lt;Notifications.NotificationRequest[]&gt; { try { return await Notifications.getAllScheduledNotificationsAsync(); } catch { return []; } }
+export async function getScheduledNotifications(): Promise<Notifications.NotificationRequest[]&gt; { try { return await Notifications.getAllScheduledNotificationsAsync(); } catch { return []; } }
 
 export async function testNotification(): Promise<void> {
   try {
