@@ -97,6 +97,21 @@ export default function Home() {
     return estimateETAtoTarget(latest, g.targetWeight, trend.slopePerDay || 0);
   }, [state.goal, state.days, trend.slopePerDay]);
 
+  function paceState() {
+    const g = state.goal; if (!g || !g.active) return 'none' as const;
+    const start = new Date(g.startDate || toKey(new Date()));
+    const end = new Date(g.targetDate);
+    const totalDays = Math.max(1, Math.round((+end - +start)/(1000*60*60*24)));
+    const todayIdx = Math.max(0, Math.min(totalDays, Math.round((+new Date(toKey(new Date())) - +start)/(1000*60*60*24))));
+    const step = (g.startWeight - g.targetWeight) / totalDays;
+    const plannedToday = g.startWeight - step * todayIdx;
+    const cur = getLatestWeightKg(state.days);
+    if (typeof cur !== 'number') return 'none' as const;
+    const diff = cur - plannedToday;
+    if (diff <= -0.2) return 'ahead' as const;
+    if (Math.abs(diff) <= 0.2) return 'on' as const;
+    return 'behind' as const;
+  }
   function paceLabel() {
     const g = state.goal; if (!g || !g.active) return '';
     const start = new Date(g.startDate || toKey(new Date()));
