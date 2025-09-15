@@ -162,6 +162,13 @@ export default function GoalScreen() {
               {state.goal ? (
                 <TouchableOpacity onPress={clearGoal} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('remove')}</Text></TouchableOpacity>
               ) : null}
+
+          {state.aiInsightsEnabled && !!motivation ? (
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ color: colors.text }}>{motivation}</Text>
+            </View>
+          ) : null}
+
               <TouchableOpacity onPress={saveGoal} style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.primary }]}><Text style={{ color: '#fff' }}>{t('save')}</Text></TouchableOpacity>
             </View>
           </View>
