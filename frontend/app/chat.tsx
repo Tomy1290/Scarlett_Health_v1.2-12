@@ -7,7 +7,6 @@ import * as Haptics from 'expo-haptics';
 import { useAppStore, useLevel } from '../src/store/useStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { localGreeting, localReply } from '../src/ai/localChat';
-import { hybridGreeting, hybridReply, getAIStatus } from '../src/ai/hybridChat';
 import { searchRecipes, getRecipeDetail } from '../src/ai/recipes';
 import type { Cuisine, Meal, Category } from '../src/data/recipes';
 import { answerTopic } from '../src/ai/knowledge';
@@ -60,8 +59,8 @@ export default function ChatScreen() {
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [selTopic, setSelTopic] = useState<typeof TOPICS[number]['key']>('cycle');
   
-  // AI Status tracking
-  const [aiStatus, setAiStatus] = useState<'cloud' | 'local' | 'checking'>('checking');
+  // AI status is always local now
+  const aiStatus: 'local' = 'local';
 
   const maxVisible = level >= 50 ? 50 : (level >= 25 ? 30 : 20);
   const allChat = state.chat || [];
@@ -83,12 +82,8 @@ export default function ChatScreen() {
   async function handleGreetingIfNeeded() {
     const now = Date.now(); const last = state.lastChatLeaveAt || 0; const allow = last === 0 || (now - last >= 5 * 60 * 1000);
     if (!allow) return; if (!state.aiInsightsEnabled) return;
-    
-    // Check AI status first
-    const status = await getAIStatus();
-    setAiStatus(status);
-    
-    const reply = await hybridGreeting(state); 
+
+    const reply = await localGreeting(state); 
     if (!reply) return; 
     const typed = await typeOut(reply);
     if (typed) { 
@@ -100,8 +95,6 @@ export default function ChatScreen() {
 
   useFocusEffect(React.useCallback(() => { 
     handleGreetingIfNeeded(); 
-    // Check AI status on focus
-    getAIStatus().then(setAiStatus);
     return () => { 
       useAppStore.getState().setLastChatLeaveAt(Date.now()); 
       typingAbort.current.abort = true; 
@@ -112,12 +105,8 @@ export default function ChatScreen() {
     const t = text.trim(); if (!t) return;
     const msg = { id: String(Date.now()), sender: 'user' as const, text: t, createdAt: Date.now() };
     state.addChat(msg); setText(''); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    // Update AI status before making request
-    const status = await getAIStatus();
-    setAiStatus(status);
-    
-    const replyText = await hybridReply(state, t);
+
+    const replyText = await localReply(state, t);
     typingAbort.current.abort = false; const typed = await typeOut(replyText);
     if (typed) { 
       const bot = { id: String(Date.now()+1), sender: 'bot' as const, text: typed, createdAt: Date.now()+1 }; 
@@ -168,12 +157,10 @@ export default function ChatScreen() {
               height: 8, 
               borderRadius: 4, 
               marginLeft: 6,
-              backgroundColor: aiStatus === 'cloud' ? '#4CAF50' : aiStatus === 'local' ? '#FF9800' : '#9E9E9E'
+              backgroundColor: '#FF9800'
             }} />
           </View>
-          <Text style={[styles.title, { color: colors.muted }]}>
-            Gugi {aiStatus === 'cloud' ? '☁️' : aiStatus === 'local' ? '📱' : '⏳'}
-          </Text>
+          <Text style={[styles.title, { color: colors.muted }]}>Gugi 📱</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity onPress={() => setShowKnowledge(true)} style={styles.iconBtn} accessibilityLabel='Wissen'>
@@ -280,7 +267,7 @@ export default function ChatScreen() {
                 <Text style={{ color: colors.text, fontWeight: '600', marginBottom: 6 }}>{lbl('Küche','Cuisine','Kuchnia')}</Text>
                 <ScrollView horizontal contentContainerStyle={{ gap: 8, paddingVertical: 4 }} showsHorizontalScrollIndicator={false}>
                   {CUISINES.map(c => (
-                    <TouchableOpacity key={c} onPress={() => setSelCuisine(c)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: selCuisine===c?colors.primary:'transparent' }]}>
+                    <TouchableOpacity key={c} onPress={() => setSelCuisine(c)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: selCuisine===c?colors.primary:'transparent' }]}> 
                       <Text style={{ color: selCuisine===c?'#fff':colors.text }}>{c==='any'?lbl('Alle','Any','Wszystkie'):c.toUpperCase()}</Text>
                     </TouchableOpacity>
                   ))}
@@ -290,7 +277,7 @@ export default function ChatScreen() {
                 <Text style={{ color: colors.text, fontWeight: '600', marginTop: 12, marginBottom: 6 }}>{lbl('Kategorie','Category','Kategoria')}</Text>
                 <ScrollView horizontal contentContainerStyle={{ gap: 8, paddingVertical: 4 }} showsHorizontalScrollIndicator={false}>
                   {CATS.map(c => (
-                    <TouchableOpacity key={c} onPress={() => setSelCat(c)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: selCat===c?colors.primary:'transparent' }]}>
+                    <TouchableOpacity key={c} onPress={() => setSelCat(c)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: selCat===c?colors.primary:'transparent' }]}> 
                       <Text style={{ color: selCat===c?'#fff':colors.text }}>
                         {c==='any'?lbl('Alle','Any','Wszystkie'):
                          c==='fleisch'?lbl('Fleisch','Meat','Mięso'):
@@ -308,7 +295,7 @@ export default function ChatScreen() {
                 <Text style={{ color: colors.text, fontWeight: '600', marginTop: 12, marginBottom: 6 }}>{lbl('Mahlzeit','Meal','Posiłek')}</Text>
                 <ScrollView horizontal contentContainerStyle={{ gap: 8, paddingVertical: 4 }} showsHorizontalScrollIndicator={false}>
                   {MEALS.map(m => (
-                    <TouchableOpacity key={m} onPress={() => setSelMeal(m)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: selMeal===m?colors.primary:'transparent' }]}>
+                    <TouchableOpacity key={m} onPress={() => setSelMeal(m)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: selMeal===m?colors.primary:'transparent' }]}> 
                       <Text style={{ color: selMeal===m?'#fff':colors.text }}>
                         {m==='any'?lbl('Alle','Any','Wszystkie'):
                          m==='breakfast'?lbl('Frühstück','Breakfast','Śniadanie'):
@@ -386,7 +373,7 @@ export default function ChatScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
                   <TouchableOpacity 
                     onPress={() => {
-                      const recipeText = `${detail.title[state.language as 'de'|'en'|'pl']}\n\n${lbl('Zutaten:','Ingredients:','Składniki:')}\n${detail.ingredients[state.language as 'de'|'en'|'pl'].map(i => `• ${i}`).join('\n')}\n\n${lbl('Zubereitung:','Instructions:','Przygotowanie:')}\n${detail.steps[state.language as 'de'|'en'|'pl'].map((s, i) => `${i+1}. ${s}`).join('\n')}`;
+                      const recipeText = `${detail.title[state.language as 'de'|'en'|'pl']}`+`\n\n${lbl('Zutaten:','Ingredients:','Składniki:')}`+`\n${detail.ingredients[state.language as 'de'|'en'|'pl'].map(i => `• ${i}`).join('\n')}`+`\n\n${lbl('Zubereitung:','Instructions:','Przygotowanie:')}`+`\n${detail.steps[state.language as 'de'|'en'|'pl'].map((s, i) => `${i+1}. ${s}`).join('\n')}`;
                       const bot = { id: String(Date.now()), sender: 'bot' as const, text: recipeText, createdAt: Date.now() };
                       state.addChat(bot);
                       setDetailId(null);

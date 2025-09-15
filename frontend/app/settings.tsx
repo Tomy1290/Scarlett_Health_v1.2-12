@@ -13,7 +13,6 @@ import {
   cancelNotification, 
   testNotification, 
   scheduleDailyNext,
-  isHyperOSLike,
 } from "../src/utils/notifications";
 import { TimePicker } from "../src/components/TimePicker";
 import { parseHHMM, toHHMM } from "../src/utils/time";
@@ -226,8 +225,6 @@ export default function SettingsScreen() {
   const desiredOrder = ['pills_morning','pills_evening','weight','water','sport'];
   const sortedReminders = [...state.reminders].sort((a,b) => { const ai = desiredOrder.indexOf(a.type); const bi = desiredOrder.indexOf(b.type); const aIdx = ai < 0 ? 999 : ai; const bIdx = bi < 0 ? 999 : bi; return aIdx - bIdx; });
 
-  const showBatteryHint = Platform.OS === 'android' && isHyperOSLike();
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
       <View style={[styles.header, { backgroundColor: colors.card, paddingVertical: 16 }]}> 
@@ -298,19 +295,6 @@ export default function SettingsScreen() {
               <TouchableOpacity onPress={() => setCustomMode((v)=>!v)} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{state.language==='de'?'Eigene':(state.language==='pl'?'Własne':'Custom')}</Text></TouchableOpacity>
             </View>
           </View>
-
-          {/* Battery optimization hint for HyperOS/Xiaomi */}
-          {showBatteryHint ? (
-            <View style={{ marginTop: 10, borderWidth: 1, borderColor: colors.primary, backgroundColor: state.theme==='pink_vibrant' ? '#321321' : '#ffe3ef', borderRadius: 12, padding: 10 }}>
-              <Text style={{ color: colors.text, fontWeight: '700' }}>{state.language==='de'?'Akku-Optimierung':(state.language==='pl'?'Optymalizacja baterii':'Battery optimization')}</Text>
-              <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Bitte Akku-Optimierung für die App ausschalten, damit Erinnerungen zuverlässig ankommen.':(state.language==='pl'?'Wyłącz optymalizację baterii dla aplikacji, aby przypomnienia były niezawodne.':'Please disable battery optimization for the app to ensure reliable reminders.')}</Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
-                <TouchableOpacity onPress={() => Linking.openSettings()} style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-                  <Text style={{ color: '#fff' }}>{state.language==='de'?'Einstellungen öffnen':(state.language==='pl'?'Otwórz ustawienia':'Open settings')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
 
           {customMode ? (
             <View style={{ marginTop: 10 }}>
