@@ -237,11 +237,11 @@ export const useAppStore = create<AppState>()(
             const minus2 = new Date(day0); minus2.setDate(day0.getDate() - 2);
             const title0 = get().language==='en' ? 'Period expected today' : (get().language==='pl'?'Okres spodziewany dziś':'Periode heute erwartet');
             const title2 = get().language==='en' ? 'Period in 2 days' : (get().language==='pl'?'Okres za 2 dni':'Periode in 2 Tagen erwartet');
-            if (+minus2 &gt; +new Date()) {
+            if (+minus2 > +new Date()) {
               const id2 = await scheduleOneTimeNotification(title2, '', minus2, 'cycle');
               if (id2) get().setNotificationMeta('cycle_period_minus2', { id: id2 });
             }
-            if (+day0 &gt; +new Date()) {
+            if (+day0 > +new Date()) {
               const id0 = await scheduleOneTimeNotification(title0, '', day0, 'cycle');
               if (id0) get().setNotificationMeta('cycle_period_day0', { id: id0 });
             }
