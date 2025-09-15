@@ -280,6 +280,21 @@ export default function SettingsScreen() {
             </View>
           </View>
           <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Bereich: 0–1000 ml.':(state.language==='pl'?'Zakres: 0–1000 ml.':'Range: 0–1000 ml.')}</Text>
+
+        {/* Fotos (Gewicht) */}
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name='images' size={18} color={colors.primary} />
+              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>Fotos (Gewicht)</Text>
+            </View>
+            <TouchableOpacity onPress={() => router.push('/gallery')} style={[styles.badge, { borderColor: colors.muted }]}>
+              <Text style={{ color: colors.text }}>Öffnen</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>Füge zu deinen Gewichtstagen Fotos hinzu (max. 5/Tag, automatisch komprimiert).</Text>
+        </View>
+
         </View>
 
         {/* Reminders */}
