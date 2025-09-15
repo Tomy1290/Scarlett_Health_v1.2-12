@@ -26,17 +26,17 @@ function useThemeColors(theme: string) {
 }
 
 function themeLabel(key: 'pink_default'|'pink_pastel'|'pink_vibrant'|'golden_pink', lang: 'de'|'en'|'pl') {
-  const mapDe: Record<string,string&gt; = { pink_default: 'Rosa – Standard', pink_pastel: 'Rosa – Pastell', pink_vibrant: 'Rosa – Kräftig', golden_pink: 'Goldenes Rosa' };
-  const mapEn: Record<string,string&gt; = { pink_default: 'Pink – Default', pink_pastel: 'Pink – Pastel', pink_vibrant: 'Pink – Vibrant', golden_pink: 'Golden Pink' };
-  const mapPl: Record<string,string&gt; = { pink_default: 'Różowy – domyślny', pink_pastel: 'Różowy – pastel', pink_vibrant: 'Różowy – intensywny', golden_pink: 'Złoty róż' };
+  const mapDe: Record<string,string> = { pink_default: 'Rosa – Standard', pink_pastel: 'Rosa – Pastell', pink_vibrant: 'Rosa – Kräftig', golden_pink: 'Goldenes Rosa' };
+  const mapEn: Record<string,string> = { pink_default: 'Pink – Default', pink_pastel: 'Pink – Pastel', pink_vibrant: 'Pink – Vibrant', golden_pink: 'Golden Pink' };
+  const mapPl: Record<string,string> = { pink_default: 'Różowy – domyślny', pink_pastel: 'Różowy – pastel', pink_vibrant: 'Różowy – intensywny', golden_pink: 'Złoty róż' };
   return (lang==='en'?mapEn:(lang==='pl'?mapPl:mapDe))[key] || key;
 }
 
 function reminderLabel(type: string, lang: 'de'|'en'|'pl', label?: string) {
   if (label) return label;
-  const mapDe: Record<string,string&gt; = { pills_morning: 'Tabletten morgens', pills_evening: 'Tabletten abends', weight: 'Gewicht', water: 'Wasser', sport: 'Sport', custom: 'Eigene Erinnerung' };
-  const mapEn: Record<string,string&gt; = { pills_morning: 'Pills morning', pills_evening: 'Pills evening', weight: 'Weight', water: 'Water', sport: 'Sport', custom: 'Custom reminder' };
-  const mapPl: Record<string,string&gt; = { pills_morning: 'Tabletki rano', pills_evening: 'Tabletki wieczorem', weight: 'Waga', water: 'Woda', sport: 'Sport', custom: 'Własne przypomnienie' };
+  const mapDe: Record<string,string> = { pills_morning: 'Tabletten morgens', pills_evening: 'Tabletten abends', weight: 'Gewicht', water: 'Wasser', sport: 'Sport', custom: 'Eigene Erinnerung' };
+  const mapEn: Record<string,string> = { pills_morning: 'Pills morning', pills_evening: 'Pills evening', weight: 'Weight', water: 'Water', sport: 'Sport', custom: 'Custom reminder' };
+  const mapPl: Record<string,string> = { pills_morning: 'Tabletki rano', pills_evening: 'Tabletki wieczorem', weight: 'Waga', water: 'Woda', sport: 'Sport', custom: 'Własne przypomnienie' };
   return (lang==='en'?mapEn:(lang==='pl'?mapPl:mapDe))[type] || type;
 }
 
@@ -52,12 +52,12 @@ export default function SettingsScreen() {
   const [customLabel, setCustomLabel] = useState('');
   const [customTime, setCustomTime] = useState('08:00');
   const [cupInput, setCupInput] = useState(String(state.waterCupMl || 250));
-  const [reminderTimes, setReminderTimes] = useState<Record<string, string&gt;&gt;({});
+  const [reminderTimes, setReminderTimes] = useState<Record<string, string>>({});
   const [debugSwitch, setDebugSwitch] = useState(false);
 
   // Initialize reminder times from stored reminders - UNIFIED STRING FORMAT
-  useEffect(() =&gt; {
-    const times: Record<string, string&gt; = {};
+  useEffect(() => {
+    const times: Record<string, string> = {};
     if (state.reminders && Array.isArray(state.reminders)) {
       for (const r of state.reminders) {
         if (!r || !r.id) continue;
@@ -69,8 +69,8 @@ export default function SettingsScreen() {
   }, [state.reminders]);
 
   async function saveCustomReminder() {
-    const currentCustom = state.reminders.filter(r =&gt; !!r.label).length;
-    if (currentCustom &gt;= 10) {
+    const currentCustom = state.reminders.filter(r => !!r.label).length;
+    if (currentCustom >= 10) {
       Alert.alert(
         state.language==='de'?'Limit erreicht':(state.language==='pl'?'Limit osiągnięty':'Limit reached'), 
         state.language==='de'?'Maximal 10 eigene Erinnerungen.':(state.language==='pl'?'Maks. 10 własnych przypomnień.':'Maximum 10 custom reminders.')
@@ -101,7 +101,7 @@ export default function SettingsScreen() {
       const tStr = `${timeData.hour.toString().padStart(2,'0')}:${timeData.minute.toString().padStart(2,'0')}`;
       state.addReminder({ id, type: 'custom', label: customLabel.trim(), time: tStr, enabled: true });
       state.setNotificationMeta(id, { id: notifId, time: tStr });
-      setReminderTimes(prev =&gt; ({ ...prev, [id]: tStr }));
+      setReminderTimes(prev => ({ ...prev, [id]: tStr }));
 
       setCustomMode(false);
       setCustomLabel('');
@@ -131,7 +131,7 @@ export default function SettingsScreen() {
         const timeString = `${def.hour.toString().padStart(2, '0')}:${def.minute.toString().padStart(2, '0')}`;
         state.addReminder({ id: def.id, type: def.type, time: timeString, enabled: true });
         state.setNotificationMeta(def.id, { id: notifId, time: timeString });
-        setReminderTimes(prev =&gt; ({ ...prev, [def.id]: timeString }));
+        setReminderTimes(prev => ({ ...prev, [def.id]: timeString }));
       }
     }
 
@@ -139,7 +139,7 @@ export default function SettingsScreen() {
   }
 
   async function toggleReminder(id: string, enabled: boolean) {
-    const r = state.reminders.find(x=&gt;x.id===id);
+    const r = state.reminders.find(x=>x.id===id);
     if (!r) return;
     if (enabled) {
       const initialized = await initializeNotifications();
@@ -166,7 +166,7 @@ export default function SettingsScreen() {
     if (!timeData) return;
     const timeString = `${timeData.hour.toString().padStart(2, '0')}:${timeData.minute.toString().padStart(2, '0')}`;
 
-    const r = state.reminders.find(x =&gt; x.id === id);
+    const r = state.reminders.find(x => x.id === id);
     if (!r) return;
 
     state.updateReminder(id, { time: timeString });
@@ -185,7 +185,7 @@ export default function SettingsScreen() {
       state.setNotificationMeta(id, { id: meta?.id || '', time: timeString });
     }
 
-    setReminderTimes(prev =&gt; ({ ...prev, [id]: timeString }));
+    setReminderTimes(prev => ({ ...prev, [id]: timeString }));
   }
 
   async function exportData() {
@@ -224,160 +224,160 @@ export default function SettingsScreen() {
   }
 
   const desiredOrder = ['pills_morning','pills_evening','weight','water','sport'];
-  const sortedReminders = [...state.reminders].sort((a,b) =&gt; { const ai = desiredOrder.indexOf(a.type); const bi = desiredOrder.indexOf(b.type); const aIdx = ai < 0 ? 999 : ai; const bIdx = bi < 0 ? 999 : bi; return aIdx - bIdx; });
+  const sortedReminders = [...state.reminders].sort((a,b) => { const ai = desiredOrder.indexOf(a.type); const bi = desiredOrder.indexOf(b.type); const aIdx = ai < 0 ? 999 : ai; const bIdx = bi < 0 ? 999 : bi; return aIdx - bIdx; });
 
   const showBatteryHint = Platform.OS === 'android' &amp;&amp; isHyperOSLike();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}&gt;
-      <View style={[styles.header, { backgroundColor: colors.card, paddingVertical: 16 }]}&gt; 
-        <TouchableOpacity onPress={() =&gt; router.back()} style={styles.iconBtn} accessibilityLabel='Zurück'&gt;
-          <Ionicons name='chevron-back' size={26} color={colors.text} /&gt;
-        </TouchableOpacity&gt;
-        <View style={{ alignItems: 'center' }}&gt;
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}&gt;
-            <Ionicons name='star' size={16} color={colors.primary} /&gt;
-            <Text style={[styles.appTitle, { color: colors.text, marginHorizontal: 6 }]}&gt;{appTitle}</Text&gt;
-            <Ionicons name='star' size={16} color={colors.primary} /&gt;
-          </View&gt;
-          <Text style={[styles.title, { color: colors.muted }]}&gt;{state.language==='de'?'Einstellungen':(state.language==='pl'?'Ustawienia':'Settings')}</Text&gt;
-        </View&gt;
-        <View style={{ width: 40 }} /&gt;
-      </View&gt;
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={[styles.header, { backgroundColor: colors.card, paddingVertical: 16 }]}> 
+        <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn} accessibilityLabel='Zurück'>
+          <Ionicons name='chevron-back' size={26} color={colors.text} />
+        </TouchableOpacity>
+        <View style={{ alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name='star' size={16} color={colors.primary} />
+            <Text style={[styles.appTitle, { color: colors.text, marginHorizontal: 6 }]}>{appTitle}</Text>
+            <Ionicons name='star' size={16} color={colors.primary} />
+          </View>
+          <Text style={[styles.title, { color: colors.muted }]}>{state.language==='de'?'Einstellungen':(state.language==='pl'?'Ustawienia':'Settings')}</Text>
+        </View>
+        <View style={{ width: 40 }} />
+      </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}&gt;
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         {/* Language */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}&gt; 
-          <Text style={{ color: colors.text, fontWeight: '700', marginBottom: 8 }}&gt;{state.language==='de'?'Sprache':(state.language==='pl'?'Język':'Language')}</Text&gt;
-          <View style={{ flexDirection: 'row', gap: 8 }}&gt;
-            <TouchableOpacity onPress={() =&gt; state.setLanguage('de')} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.language==='de'?colors.primary:'transparent' }]}&gt;<Text style={{ color: state.language==='de'?'#fff':colors.text }}&gt;Deutsch</Text&gt;</TouchableOpacity&gt;
-            <TouchableOpacity onPress={() =&gt; state.setLanguage('en')} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.language==='en'?colors.primary:'transparent' }]}&gt;<Text style={{ color: state.language==='en'?'#fff':colors.text }}&gt;English</Text&gt;</TouchableOpacity&gt;
-            <TouchableOpacity onPress={() =&gt; state.setLanguage('pl')} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.language==='pl'?colors.primary:'transparent' }]}&gt;<Text style={{ color: state.language==='pl'?'#fff':colors.text }}&gt;Polski</Text&gt;</TouchableOpacity&gt;
-          </View&gt;
-        </View&gt;
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <Text style={{ color: colors.text, fontWeight: '700', marginBottom: 8 }}>{state.language==='de'?'Sprache':(state.language==='pl'?'Język':'Language')}</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity onPress={() => state.setLanguage('de')} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.language==='de'?colors.primary:'transparent' }]}><Text style={{ color: state.language==='de'?'#fff':colors.text }}>Deutsch</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => state.setLanguage('en')} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.language==='en'?colors.primary:'transparent' }]}><Text style={{ color: state.language==='en'?'#fff':colors.text }}>English</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => state.setLanguage('pl')} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.language==='pl'?colors.primary:'transparent' }]}><Text style={{ color: state.language==='pl'?'#fff':colors.text }}>Polski</Text></TouchableOpacity>
+          </View>
+        </View>
 
         {/* Theme */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}&gt; 
-          <Text style={{ color: colors.text, fontWeight: '700' }}&gt;{state.language==='de'?'Theme':(state.language==='pl'?'Motyw':'Theme')}</Text&gt;
-          <Text style={{ color: colors.muted, marginTop: 6 }}&gt;{state.language==='de'?'Wähle ein App-Theme. „Golden Pink“ ab Level 75.':(state.language==='pl'?'Wybierz motyw aplikacji. „Golden Pink” od poziomu 75.':'Choose an app theme. "Golden Pink" unlocks at level 75.')}</Text&gt;
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}&gt;
-            {(['pink_default','pink_pastel','pink_vibrant','golden_pink'] as const).map((t) =&gt; (
-              <TouchableOpacity key={t} onPress={() =&gt; state.setTheme(t)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.theme===t?colors.primary:'transparent' }]}&gt;
-                <Text style={{ color: state.theme===t?'#fff':colors.text }}&gt;{themeLabel(t, state.language as any)}</Text&gt;
-              </TouchableOpacity&gt;
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <Text style={{ color: colors.text, fontWeight: '700' }}>{state.language==='de'?'Theme':(state.language==='pl'?'Motyw':'Theme')}</Text>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Wähle ein App-Theme. „Golden Pink“ ab Level 75.':(state.language==='pl'?'Wybierz motyw aplikacji. „Golden Pink” od poziomu 75.':'Choose an app theme. "Golden Pink" unlocks at level 75.')}</Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            {(['pink_default','pink_pastel','pink_vibrant','golden_pink'] as const).map((t) => (
+              <TouchableOpacity key={t} onPress={() => state.setTheme(t)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.theme===t?colors.primary:'transparent' }]}>
+                <Text style={{ color: state.theme===t?'#fff':colors.text }}>{themeLabel(t, state.language as any)}</Text>
+              </TouchableOpacity>
             ))}
-          </View&gt;
-        </View&gt;
+          </View>
+        </View>
 
         {/* Drinks settings */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}&gt; 
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}&gt;
-            <Ionicons name='cafe' size={18} color={colors.primary} /&gt;
-            <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}&gt;{state.language==='de'?'Trinken':(state.language==='pl'?'Napoje':'Drinks')}</Text&gt;
-          </View&gt;
-          <Text style={{ color: colors.muted, marginTop: 6 }}&gt;{state.language==='de'?'Bechergröße für Wasser (ml). Fortschrittsbalken berechnet Tagesziel automatisch aus Gewicht (35 ml/kg) und +500 ml bei Sport.':(state.language==='pl'?'Rozmiar kubka wody (ml). Pasek postępu oblicza cel dzienny automatycznie z wagi (35 ml/kg) i +500 ml przy sporcie.':'Cup size for water (ml). Progress bar computes daily target automatically from weight (35 ml/kg) and +500 ml if sport.')}</Text&gt;
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}&gt;
-            <Text style={{ color: colors.text, width: 160 }}&gt;{state.language==='de'?'Bechergröße':(state.language==='pl'?'Rozmiar kubka':'Cup size')}</Text&gt;
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}&gt;
-              <TextInput keyboardType='number-pad' value={cupInput} onChangeText={setCupInput} onBlur={() =&gt; { const n = parseInt((cupInput||'').replace(/[^0-9]/g,'' )||'0',10); const v = Math.max(0, Math.min(1000, isNaN(n)?0:n)); state.setWaterCupMl(v); setCupInput(String(v)); }} style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, color: colors.text, backgroundColor: colors.input }} /&gt;
-              <Text style={{ color: colors.muted, marginLeft: 8 }}&gt;ml</Text&gt;
-            </View&gt;
-          </View&gt;
-          <Text style={{ color: colors.muted, marginTop: 6 }}&gt;{state.language==='de'?'Bereich: 0–1000 ml.':(state.language==='pl'?'Zakres: 0–1000 ml.':'Range: 0–1000 ml.')}</Text&gt;
-        </View&gt;
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name='cafe' size={18} color={colors.primary} />
+            <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{state.language==='de'?'Trinken':(state.language==='pl'?'Napoje':'Drinks')}</Text>
+          </View>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Bechergröße für Wasser (ml). Fortschrittsbalken berechnet Tagesziel automatisch aus Gewicht (35 ml/kg) und +500 ml bei Sport.':(state.language==='pl'?'Rozmiar kubka wody (ml). Pasek postępu oblicza cel dzienny automatycznie z wagi (35 ml/kg) i +500 ml przy sporcie.':'Cup size for water (ml). Progress bar computes daily target automatically from weight (35 ml/kg) and +500 ml if sport.')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+            <Text style={{ color: colors.text, width: 160 }}>{state.language==='de'?'Bechergröße':(state.language==='pl'?'Rozmiar kubka':'Cup size')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <TextInput keyboardType='number-pad' value={cupInput} onChangeText={setCupInput} onBlur={() => { const n = parseInt((cupInput||'').replace(/[^0-9]/g,'' )||'0',10); const v = Math.max(0, Math.min(1000, isNaN(n)?0:n)); state.setWaterCupMl(v); setCupInput(String(v)); }} style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, color: colors.text, backgroundColor: colors.input }} />
+              <Text style={{ color: colors.muted, marginLeft: 8 }}>ml</Text>
+            </View>
+          </View>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Bereich: 0–1000 ml.':(state.language==='pl'?'Zakres: 0–1000 ml.':'Range: 0–1000 ml.')}</Text>
+        </View>
 
         {/* Reminders */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}&gt; 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}&gt;
-            <Text style={{ color: colors.text, fontWeight: '700' }}&gt;{state.language==='de'?'Erinnerungen':(state.language==='pl'?'Przypomnienia':'Reminders')}</Text&gt;
-            <View style={{ flexDirection: 'row', gap: 8 }}&gt;
-              <TouchableOpacity onPress={testNotification} style={[styles.badge, { backgroundColor: '#4CAF50', borderColor: '#4CAF50' }]}&gt;
-                <Text style={{ color: '#fff' }}&gt;{state.language==='de'?'Test':(state.language==='pl'?'Test':'Test')}</Text&gt;
-              </TouchableOpacity&gt;
-              <TouchableOpacity onPress={seedDefaults} style={[styles.badge, { borderColor: colors.muted }]}&gt;<Text style={{ color: colors.text }}&gt;{state.language==='de'?'Standard anlegen':(state.language==='pl'?'Utwórz domyślne':'Seed defaults')}</Text&gt;</TouchableOpacity&gt;
-              <TouchableOpacity onPress={() =&gt; setCustomMode((v)=&gt;!v)} style={[styles.badge, { borderColor: colors.muted }]}&gt;<Text style={{ color: colors.text }}&gt;{state.language==='de'?'Eigene':(state.language==='pl'?'Własne':'Custom')}</Text&gt;</TouchableOpacity&gt;
-            </View&gt;
-          </View&gt;
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ color: colors.text, fontWeight: '700' }}>{state.language==='de'?'Erinnerungen':(state.language==='pl'?'Przypomnienia':'Reminders')}</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity onPress={testNotification} style={[styles.badge, { backgroundColor: '#4CAF50', borderColor: '#4CAF50' }]}>
+                <Text style={{ color: '#fff' }}>{state.language==='de'?'Test':(state.language==='pl'?'Test':'Test')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={seedDefaults} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{state.language==='de'?'Standard anlegen':(state.language==='pl'?'Utwórz domyślne':'Seed defaults')}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setCustomMode((v)=>!v)} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{state.language==='de'?'Eigene':(state.language==='pl'?'Własne':'Custom')}</Text></TouchableOpacity>
+            </View>
+          </View>
 
           {/* Battery optimization hint for HyperOS/Xiaomi */}
           {showBatteryHint ? (
-            <View style={{ marginTop: 10, borderWidth: 1, borderColor: colors.primary, backgroundColor: state.theme==='pink_vibrant' ? '#321321' : '#ffe3ef', borderRadius: 12, padding: 10 }}&gt;
-              <Text style={{ color: colors.text, fontWeight: '700' }}&gt;{state.language==='de'?'Akku-Optimierung':(state.language==='pl'?'Optymalizacja baterii':'Battery optimization')}</Text&gt;
-              <Text style={{ color: colors.muted, marginTop: 6 }}&gt;{state.language==='de'?'Bitte Akku-Optimierung für die App ausschalten, damit Erinnerungen zuverlässig ankommen.':(state.language==='pl'?'Wyłącz optymalizację baterii dla aplikacji, aby przypomnienia były niezawodne.':'Please disable battery optimization for the app to ensure reliable reminders.')}</Text&gt;
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}&gt;
-                <TouchableOpacity onPress={() =&gt; Linking.openSettings()} style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.primary }]}&gt;
-                  <Text style={{ color: '#fff' }}&gt;{state.language==='de'?'Einstellungen öffnen':(state.language==='pl'?'Otwórz ustawienia':'Open settings')}</Text&gt;
-                </TouchableOpacity&gt;
-              </View&gt;
-            </View&gt;
+            <View style={{ marginTop: 10, borderWidth: 1, borderColor: colors.primary, backgroundColor: state.theme==='pink_vibrant' ? '#321321' : '#ffe3ef', borderRadius: 12, padding: 10 }}>
+              <Text style={{ color: colors.text, fontWeight: '700' }}>{state.language==='de'?'Akku-Optimierung':(state.language==='pl'?'Optymalizacja baterii':'Battery optimization')}</Text>
+              <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Bitte Akku-Optimierung für die App ausschalten, damit Erinnerungen zuverlässig ankommen.':(state.language==='pl'?'Wyłącz optymalizację baterii dla aplikacji, aby przypomnienia były niezawodne.':'Please disable battery optimization for the app to ensure reliable reminders.')}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
+                <TouchableOpacity onPress={() => Linking.openSettings()} style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+                  <Text style={{ color: '#fff' }}>{state.language==='de'?'Einstellungen öffnen':(state.language==='pl'?'Otwórz ustawienia':'Open settings')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           ) : null}
 
           {customMode ? (
-            <View style={{ marginTop: 10 }}&gt;
-              <View style={{ flexDirection: 'row', gap: 8 }}&gt;
-                <TextInput placeholder={state.language==='de'?'Label':(state.language==='pl'?'Etykieta':'Label')} placeholderTextColor={colors.muted} value={customLabel} onChangeText={setCustomLabel} style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, color: colors.text, backgroundColor: colors.input }} /&gt;
-                <View style={{ width: 100 }}&gt;
+            <View style={{ marginTop: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TextInput placeholder={state.language==='de'?'Label':(state.language==='pl'?'Etykieta':'Label')} placeholderTextColor={colors.muted} value={customLabel} onChangeText={setCustomLabel} style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, color: colors.text, backgroundColor: colors.input }} />
+                <View style={{ width: 100 }}>
                   <TimePicker
                     time={customTime}
                     onTimeChange={setCustomTime}
                     colors={colors}
                     style={{ borderWidth: 1, borderColor: colors.muted, borderRadius: 8, backgroundColor: colors.input }}
-                  /&gt;
-                </View&gt;
-              </View&gt;
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}&gt;
-                <TouchableOpacity onPress={() =&gt; { setCustomMode(false); setCustomLabel(''); setCustomTime('08:00'); }} style={[styles.badge, { borderColor: colors.muted }]}&gt;<Text style={{ color: colors.text }}&gt;{state.language==='de'?'Abbrechen':(state.language==='pl'?'Anuluj':'Cancel')}</Text&gt;</TouchableOpacity&gt;
-                <TouchableOpacity onPress={saveCustomReminder} style={[styles.badge, { borderColor: colors.muted, backgroundColor: colors.primary }]}&gt;<Text style={{ color: '#fff' }}&gt;{state.language==='de'?'Speichern':(state.language==='pl'?'Zapisz':'Save')}</Text&gt;</TouchableOpacity&gt;
-              </View&gt;
-            </View&gt;
+                  />
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                <TouchableOpacity onPress={() => { setCustomMode(false); setCustomLabel(''); setCustomTime('08:00'); }} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{state.language==='de'?'Abbrechen':(state.language==='pl'?'Anuluj':'Cancel')}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={saveCustomReminder} style={[styles.badge, { borderColor: colors.muted, backgroundColor: colors.primary }]}><Text style={{ color: '#fff' }}>{state.language==='de'?'Speichern':(state.language==='pl'?'Zapisz':'Save')}</Text></TouchableOpacity>
+              </View>
+            </View>
           ) : null}
-          {sortedReminders.length === 0 ? (<Text style={{ color: colors.muted, marginTop: 6 }}&gt;{state.language==='de'?'Keine Erinnerungen angelegt.':(state.language==='pl'?'Brak przypomnień.':'No reminders yet.')}</Text&gt;) : null}
-          {sortedReminders.map((r) =&gt; (
-            <View key={r.id} style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center' }}&gt;
-              <View style={{ flex: 1 }}&gt;
-                <Text style={{ color: colors.text, fontWeight: '700' }}&gt;
+          {sortedReminders.length === 0 ? (<Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Keine Erinnerungen angelegt.':(state.language==='pl'?'Brak przypomnień.':'No reminders yet.')}</Text>) : null}
+          {sortedReminders.map((r) => (
+            <View key={r.id} style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontWeight: '700' }}>
                   {reminderLabel(r.type, state.language as any, r.label)}
-                </Text&gt;
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}&gt;
-                  <View style={{ flex: 1 }}&gt;
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                  <View style={{ flex: 1 }}>
                     <TimePicker
                       time={reminderTimes[r.id] || '08:00'}
-                      onTimeChange={(str) =&gt; updateTime(r.id, str)}
+                      onTimeChange={(str) => updateTime(r.id, str)}
                       colors={colors}
                       style={{ width: 120, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, backgroundColor: colors.input }}
-                    /&gt;
-                  </View&gt;
-                  <View style={{ width: 8 }} /&gt;
-                  <Switch value={r.enabled} onValueChange={(v)=&gt;toggleReminder(r.id, v)} thumbColor={'#fff'} trackColor={{ true: colors.primary, false: colors.muted }} /&gt;
-                </View&gt;
-              </View&gt;
-              <TouchableOpacity onPress={async ()=&gt;{ const meta = state.notificationMeta[r.id]; if (meta?.id) await cancelNotification(meta.id); state.deleteReminder(r.id); }} style={{ padding: 8 }}&gt;
-                <Ionicons name='trash' size={18} color={colors.muted} /&gt;
-              </TouchableOpacity&gt;
-            </View&gt;
+                    />
+                  </View>
+                  <View style={{ width: 8 }} />
+                  <Switch value={r.enabled} onValueChange={(v)=>toggleReminder(r.id, v)} thumbColor={'#fff'} trackColor={{ true: colors.primary, false: colors.muted }} />
+                </View>
+              </View>
+              <TouchableOpacity onPress={async ()=>{ const meta = state.notificationMeta[r.id]; if (meta?.id) await cancelNotification(meta.id); state.deleteReminder(r.id); }} style={{ padding: 8 }}>
+                <Ionicons name='trash' size={18} color={colors.muted} />
+              </TouchableOpacity>
+            </View>
           ))}
-        </View&gt;
+        </View>
 
         {/* Debug – Notifications */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}&gt; 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}&gt;
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}&gt;
-              <Ionicons name='bug' size={18} color={colors.primary} /&gt;
-              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}&gt;Debug – Notifications</Text&gt;
-            </View&gt;
-            <Switch value={debugSwitch} onValueChange={(v)=&gt;{ setDebugSwitch(v); if (v) { router.push('/debug/notifications'); setTimeout(()=&gt; setDebugSwitch(false), 400); } }} thumbColor={'#fff'} trackColor={{ true: colors.primary, false: colors.muted }} /&gt;
-          </View&gt;
-          <Text style={{ color: colors.muted, marginTop: 6 }}&gt;Öffnet den Debug-Bildschirm, um geplante Benachrichtigungen zu prüfen oder zu löschen.</Text&gt;
-        </View&gt;
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name='bug' size={18} color={colors.primary} />
+              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>Debug – Notifications</Text>
+            </View>
+            <Switch value={debugSwitch} onValueChange={(v)=>{ setDebugSwitch(v); if (v) { router.push('/debug/notifications'); setTimeout(()=> setDebugSwitch(false), 400); } }} thumbColor={'#fff'} trackColor={{ true: colors.primary, false: colors.muted }} />
+          </View>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>Öffnet den Debug-Bildschirm, um geplante Benachrichtigungen zu prüfen oder zu löschen.</Text>
+        </View>
 
         {/* App info */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}&gt; 
-          <Text style={{ color: colors.text, fontWeight: '700' }}&gt;{state.language==='de'?'App':(state.language==='pl'?'Aplikacja':'App')}</Text&gt;
-          <Text style={{ color: colors.muted, marginTop: 6 }}&gt;{state.language==='de'?'Version':(state.language==='pl'?'Wersja':'Version')}: {version}</Text&gt;
-          <Text style={{ color: colors.muted, marginTop: 2 }}&gt;created by Gugi</Text&gt;
-        </View&gt;
-      </ScrollView&gt;
-    </SafeAreaView&gt;
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <Text style={{ color: colors.text, fontWeight: '700' }}>{state.language==='de'?'App':(state.language==='pl'?'Aplikacja':'App')}</Text>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Version':(state.language==='pl'?'Wersja':'Version')}: {version}</Text>
+          <Text style={{ color: colors.muted, marginTop: 2 }}>created by Gugi</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
