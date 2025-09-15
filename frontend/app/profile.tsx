@@ -50,6 +50,14 @@ export default function ProfileScreen() {
       setAvatar(res.assets[0].uri);
     }
   }
+  async function takeAvatar() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (perm.status !== 'granted') return;
+    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsEditing: true, aspect: [1,1] });
+    if (!res.canceled && res.assets?.[0]?.uri) {
+      setAvatar(res.assets[0].uri);
+    }
+  }
 
   function save() {
     const h = parseInt((height||'').replace(/[^0-9]/g,''), 10);
