@@ -73,7 +73,7 @@ export async function scheduleGoalReminderIfNeeded(state: AppState, force = fals
 
     const title = state.language==='en' ? 'Goal check' : (state.language==='pl'?'Sprawdź cel':'Zielcheck');
     const body = buildGoalReminderBody(state);
-    const id = await scheduleOneTimeNotification(title, body, next, 'reminders');
+    const id = await scheduleOneTimeNotification(title, body, next, 'reminders', { openRoute: '/goal' });
     if (id) state.setNotificationMeta('goal_reminder', { id });
   } catch {}
 }
