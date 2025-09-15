@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert, Switch, TextInput, Linking } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert, Switch, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
@@ -11,7 +11,6 @@ import { useAppStore } from "../src/store/useStore";
 import { 
   initializeNotifications, 
   cancelNotification, 
-  testNotification, 
   scheduleDailyNext,
 } from "../src/utils/notifications";
 import { TimePicker } from "../src/components/TimePicker";
@@ -54,7 +53,6 @@ export default function SettingsScreen() {
   const [reminderTimes, setReminderTimes] = useState<Record<string, string>>({});
   const [debugSwitch, setDebugSwitch] = useState(false);
 
-  // Initialize reminder times from stored reminders - UNIFIED STRING FORMAT
   useEffect(() => {
     const times: Record<string, string> = {};
     if (state.reminders && Array.isArray(state.reminders)) {
@@ -93,7 +91,6 @@ export default function SettingsScreen() {
       return;
     }
 
-    // Schedule next occurrence one-time
     const notifId = await scheduleDailyNext(id, customLabel.trim(), 'Custom reminder', timeData.hour, timeData.minute, 'reminders');
 
     if (notifId) {
@@ -288,9 +285,6 @@ export default function SettingsScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={{ color: colors.text, fontWeight: '700' }}>{state.language==='de'?'Erinnerungen':(state.language==='pl'?'Przypomnienia':'Reminders')}</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity onPress={testNotification} style={[styles.badge, { backgroundColor: '#4CAF50', borderColor: '#4CAF50' }]}>
-                <Text style={{ color: '#fff' }}>{state.language==='de'?'Test':(state.language==='pl'?'Test':'Test')}</Text>
-              </TouchableOpacity>
               <TouchableOpacity onPress={seedDefaults} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{state.language==='de'?'Standard anlegen':(state.language==='pl'?'Utwórz domyślne':'Seed defaults')}</Text></TouchableOpacity>
               <TouchableOpacity onPress={() => setCustomMode((v)=>!v)} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{state.language==='de'?'Eigene':(state.language==='pl'?'Własne':'Custom')}</Text></TouchableOpacity>
             </View>
@@ -340,6 +334,30 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </View>
           ))}
+        </View>
+
+        {/* Weekly Events toggle */}
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name='calendar' size={18} color={colors.primary} />
+              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>Wochen-Events</Text>
+            </View>
+            <Switch value={state.eventsEnabled !== false} onValueChange={(v)=> state.setEventsEnabled(v)} thumbColor={'#fff'} trackColor={{ true: colors.primary, false: colors.muted }} />
+          </View>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>Zeige ein wöchentliches Ziel auf dem Dashboard (z. B. 4 Tage Wasserziel).</Text>
+        </View>
+
+        {/* KI Insights toggle */}
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name='sparkles' size={18} color={colors.primary} />
+              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>KI Insights</Text>
+            </View>
+            <Switch value={state.aiInsightsEnabled !== false} onValueChange={(v)=> state.setAiInsightsEnabled(v)} thumbColor={'#fff'} trackColor={{ true: colors.primary, false: colors.muted }} />
+          </View>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>Aktiviere kompakte Hinweise durch die Online‑KI (Chat/Analyse/Motivation).</Text>
         </View>
 
         {/* Debug – Notifications */}
