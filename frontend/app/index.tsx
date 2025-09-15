@@ -286,6 +286,9 @@ export default function Home() {
             </TouchableOpacity>
           </View>
           {typeof day.weight === 'number' ? <Text style={{ color: colors.muted, marginTop: 6 }}>{t('Heute', 'Today', 'Dziś')}: {day.weight} kg</Text> : null}
+          {state.aiInsightsEnabled && !!motivation ? (
+            <Text style={{ color: colors.text, marginTop: 6 }}>{motivation}</Text>
+          ) : null}
         </View>
 
         {/* Cycle */}
