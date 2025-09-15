@@ -86,6 +86,7 @@ export default function ProfileScreen() {
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
               <TouchableOpacity onPress={pickAvatar} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('pick')}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={takeAvatar} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>Kamera</Text></TouchableOpacity>
               {avatar ? (<TouchableOpacity onPress={()=> setAvatar('')} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('remove')}</Text></TouchableOpacity>) : null}
             </View>
           </View>
