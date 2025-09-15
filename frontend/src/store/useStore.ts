@@ -68,6 +68,10 @@ export type AppState = {
   legendShown?: boolean;
   rewardsSeen?: RewardsSeen;
   profileAlias?: string;
+  name?: string;
+  birthDate?: string; // YYYY-MM-DD
+  gender?: 'female'|'male'|'other';
+  avatarUri?: string;
   xpLog?: XpLogEntry[];
   aiInsightsEnabled: boolean;
   aiFeedback?: Record<string, number>;
