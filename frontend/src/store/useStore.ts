@@ -25,7 +25,7 @@ export type DayData = {
 
 export type Cycle = { start: string; end?: string };
 
-export type Goal = { targetWeight: number; targetDate: string; startWeight: number; active: boolean };
+export type Goal = { targetWeight: number; targetDate: string; startWeight: number; startDate?: string; active: boolean };
 export type Reminder = { id: string; type: string; time: string; enabled: boolean; label?: string };
 export type ChatMessage = { id: string; sender: "user" | "bot"; text: string; createdAt: number };
 export type SavedMessage = { id: string; title: string; category?: string; tags?: string[]; text: string; createdAt: number };
@@ -186,7 +186,7 @@ export const useAppStore = create<AppState>()(
       setNotificationMeta: (remId, meta) => set({ notificationMeta: { ...get().notificationMeta, [remId]: meta } }),
       setHasSeededReminders: (v) => set({ hasSeededReminders: v }),
       setShowOnboarding: (v) => set({ showOnboarding: v }),
-      completeEvent: (weekKey, entry) => { const existing = get().eventHistory[weekKey]; if (existing?.completed) return; let bonus = 0; try { const { EVENTS } = require('../gamification/events'); const evt = (EVENTS as any[]).find((e) => e.id === entry.id); if (evt) bonus = Math.round(entry.xp * (evt.bonusPercent || 0)); } catch {} const total = entry.xp + bonus; const log = [...(get().xpLog||[]), { id: `${weekKey}:${Date.now()}`, ts: Date.now(), amount: total, source: 'event', note: entry.id }]; set({ eventHistory: { ...get().eventHistory, [weekKey]: { id: entry.id, completed: true, xp: total } }, xp: get().xp + total, xpLog: log }); },
+      completeEvent: (weekKey, entry) => { const existing = get().eventHistory[weekKey]; if (existing?.completed) return; let bonus = 0; try { const { EVENTS } = require('../gamification/events'); const evt = (EVENTS as any[]).find((e) => e.id === entry.id); if (evt && (evt as any).bonusPercent) bonus = Math.round(entry.xp * (evt as any).bonusPercent); } catch {} const total = entry.xp + bonus; const log = [...(get().xpLog||[]), { id: `${weekKey}:${Date.now()}`, ts: Date.now(), amount: total, source: 'event', note: entry.id }]; set({ eventHistory: { ...get().eventHistory, [weekKey]: { id: entry.id, completed: true, xp: total } }, xp: get().xp + total, xpLog: log }); },
       setLegendShown: (v) => set({ legendShown: v }),
       setRewardSeen: (key, v) => set({ rewardsSeen: { ...(get().rewardsSeen||{}), [key]: v } }),
       setProfileAlias: (alias) => set({ profileAlias: alias }),

@@ -1,11 +1,12 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, KeyboardAvoidingView, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, KeyboardAvoidingView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAppStore, useLevel } from '../src/store/useStore';
 import { toKey } from '../src/utils/date';
+import { LineChart } from 'react-native-gifted-charts';
 
 function useThemeColors(theme: string) {
   if (theme === 'pink_pastel') return { bg: '#fff0f5', card: '#ffe4ef', primary: '#d81b60', text: '#3a2f33', muted: '#8a6b75' };
@@ -36,79 +37,83 @@ export default function GoalScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [help, setHelp] = useState<Record<string, boolean>>({ info: true });
 
-  // Build analysis
+  const startDateKey = useMemo(() => existingGoal?.startDate || toKey(new Date()), [existingGoal?.startDate]);
   const startWeight = useMemo(() => existingGoal?.startWeight ?? latestWeight ?? undefined, [existingGoal?.startWeight, latestWeight]);
   const currentWeight = latestWeight;
+
   const targetW = useMemo(() => { const n = parseFloat((targetWeight||'').replace(',', '.')); return isNaN(n) ? undefined : n; }, [targetWeight]);
-
-  const today = new Date();
+  const startDate = useMemo(() => new Date(startDateKey), [startDateKey]);
   const targetKey = toKey(targetDate);
-  const daysRemaining = Math.max(0, daysBetween(new Date(toKey(today)), new Date(targetKey)));
+  const endDate = useMemo(() => new Date(targetKey), [targetKey]);
 
-  // compute slope from history (last 14 days)
-  const lastKeys = useMemo(() => Object.keys(state.days).sort().slice(-14), [state.days]);
-  const slopePerDay = useMemo(() => {
-    const pts = lastKeys.map(k => ({ k, w: typeof (state.days as any)[k]?.weight === 'number' ? Number((state.days as any)[k]?.weight) : undefined })).filter(p => typeof p.w === 'number');
-    if (pts.length < 2) return 0;
-    const first = pts[0], last = pts[pts.length - 1];
-    const dd = Math.max(1, daysBetween(new Date(first.k), new Date(last.k)));
-    return (last.w! - first.w!) / dd; // kg per day (negative means losing)
-  }, [state.days, lastKeys]);
+  const totalDays = Math.max(1, daysBetween(startDate, endDate));
+  const daysArr = useMemo(() => {
+    const a: string[] = [];
+    for (let i=0;i<=totalDays;i++) { const d = new Date(startDate); d.setDate(startDate.getDate()+i); a.push(toKey(d)); }
+    return a;
+  }, [startDateKey, totalDays]);
 
-  const etaDaysByTrend = useMemo(() => {
-    if (typeof currentWeight !== 'number' || typeof targetW !== 'number') return undefined;
-    const delta = currentWeight - targetW;
-    if (Math.abs(delta) < 0.001) return 0;
-    if (slopePerDay >= 0) return undefined; // moving away or flat
-    const d = Math.ceil(delta / Math.abs(slopePerDay));
-    return d < 0 ? undefined : d;
-  }, [currentWeight, targetW, slopePerDay]);
+  const todayKey = toKey(new Date());
+  const todayIdx = Math.min(totalDays, Math.max(0, daysBetween(startDate, new Date(todayKey))));
 
+  // Plan series: linear from startWeight to targetWeight
+  const planSeries = useMemo(() => {
+    if (typeof startWeight !== 'number' || typeof targetW !== 'number' || totalDays <= 0) return [] as { value: number }[];
+    const step = (startWeight - targetW) / totalDays;
+    return daysArr.map((_, i) => ({ value: parseFloat((startWeight - step * i).toFixed(1)) }));
+  }, [startWeight, targetW, totalDays, daysArr]);
+
+  // Actual series: use recorded weights; highlight today point
+  const actualSeries = useMemo(() => {
+    return daysArr.map((k, i) => {
+      const v = (state.days as any)[k]?.weight;
+      if (typeof v === 'number') {
+        return { value: Number(v), dataPointColor: i===todayIdx ? '#FF9800' : colors.primary, dataPointRadius: i===todayIdx ? 4 : 2 } as any;
+      }
+      return { value: 0, hideDataPoint: true } as any;
+    });
+  }, [daysArr, state.days, todayIdx, colors.primary]);
+
+  // Derived KPIs
+  const daysRemaining = Math.max(0, daysBetween(new Date(todayKey), endDate));
   const dailyNeeded = useMemo(() => {
-    if (typeof currentWeight !== 'number' || typeof targetW !== 'number') return undefined;
-    if (daysRemaining <= 0) return undefined;
-    const delta = currentWeight - targetW; // want to lose positive delta
-    return Math.max(0, delta / daysRemaining);
+    if (typeof currentWeight !== 'number' || typeof targetW !== 'number' || daysRemaining <= 0) return undefined;
+    const delta = currentWeight - targetW; return Math.max(0, delta / daysRemaining);
   }, [currentWeight, targetW, daysRemaining]);
 
   const progressPercent = useMemo(() => {
     if (typeof startWeight !== 'number' || typeof currentWeight !== 'number' || typeof targetW !== 'number') return 0;
-    const total = startWeight - targetW;
-    if (total <= 0) return 0;
-    const done = startWeight - currentWeight;
-    return Math.max(0, Math.min(100, Math.round((done / total) * 100)));
+    const total = startWeight - targetW; if (total <= 0) return 0; const done = startWeight - currentWeight; return Math.max(0, Math.min(100, Math.round((done / total) * 100)));
   }, [startWeight, currentWeight, targetW]);
 
-  // Plan series (linear plan from today to target)
-  const planSeries = useMemo(() => {
-    if (typeof currentWeight !== 'number' || typeof targetW !== 'number' || daysRemaining <= 0) return [] as { value: number }[];
-    const n = Math.min(30, Math.max(2, daysRemaining));
-    const step = (currentWeight - targetW) / n;
-    return new Array(n).fill(0).map((_, i) => ({ value: parseFloat((currentWeight - step * i).toFixed(1)) }));
-  }, [currentWeight, targetW, daysRemaining]);
-
-  const actualSeries = useMemo(() => {
-    const keys = Object.keys(state.days).sort().slice(-Math.max(7, planSeries.length));
-    return keys.map(k => ({ value: typeof (state.days as any)[k]?.weight === 'number' ? Number((state.days as any)[k]?.weight) : 0 })).filter(d => d.value > 0);
-  }, [state.days, planSeries.length]);
+  const screenW = Dimensions.get('window').width;
+  const spacing = 32;
+  const chartWidth = Math.max(screenW - 32, daysArr.length * (spacing + 4));
 
   function t(key: string) {
     const de: Record<string,string> = {
       title: 'Zielgewicht', save: 'Speichern', remove: 'Ziel entfernen', pickDate: 'Datum wählen', weight: 'Wunschgewicht (kg)', date: 'Zieldatum',
-      info: 'Lege dein Zielgewicht und ein Datum fest. Wir schätzen Dauer, täglichen Bedarf und Fortschritt.',
+      info: 'Lege dein Zielgewicht und ein Datum fest. Wir schätzen Dauer, täglichen Bedarf und Fortschritt. Der Plan läuft ab dem Tag der Zielsetzung bis zum Zieldatum.',
       analysis: 'Analyse', trendEta: 'ETA (Trend)', daily: 'Täglich nötig', progress: 'Fortschritt', plan: 'Plan vs. Ist',
-      etaNa: 'Kein Trend erkennbar', day: 'Tag', days: 'Tage',
+      etaNa: 'Kein Trend erkennbar', day: 'Tag', days: 'Tage', start: 'Start', end: 'Ziel', paceAhead: 'Vor dem Plan', paceOn: 'Im Plan', paceBehind: 'Hinter dem Plan'
     };
-    const en: Record<string,string> = { title: 'Target weight', save: 'Save', remove: 'Remove target', pickDate: 'Pick date', weight: 'Target weight (kg)', date: 'Target date', info: 'Set your target weight and date. We estimate duration, daily need and progress.', analysis: 'Analysis', trendEta: 'ETA (trend)', daily: 'Daily needed', progress: 'Progress', plan: 'Plan vs. actual', etaNa: 'No trend visible', day: 'day', days: 'days' };
-    const pl: Record<string,string> = { title: 'Waga docelowa', save: 'Zapisz', remove: 'Usuń cel', pickDate: 'Wybierz datę', weight: 'Waga docelowa (kg)', date: 'Data docelowa', info: 'Ustaw wagę i datę. Szacujemy czas, dzienne tempo i postęp.', analysis: 'Analiza', trendEta: 'ETA (trend)', daily: 'Dzienne wymagane', progress: 'Postęp', plan: 'Plan vs. stan', etaNa: 'Brak trendu', day: 'dzień', days: 'dni' };
-    const map = state.language==='en'?en:(state.language==='pl'?pl:de);
-    return map[key] || key;
+    const en: Record<string,string> = { title: 'Target weight', save: 'Save', remove: 'Remove target', pickDate: 'Pick date', weight: 'Target weight (kg)', date: 'Target date', info: 'Set your target weight and date. We estimate duration, daily need and progress. The plan runs from goal set date to target date.', analysis: 'Analysis', trendEta: 'ETA (trend)', daily: 'Daily needed', progress: 'Progress', plan: 'Plan vs. actual', etaNa: 'No trend visible', day: 'day', days: 'days', start: 'Start', end: 'Target', paceAhead: 'Ahead of plan', paceOn: 'On plan', paceBehind: 'Behind plan' };
+    const pl: Record<string,string> = { title: 'Waga docelowa', save: 'Zapisz', remove: 'Usuń cel', pickDate: 'Wybierz datę', weight: 'Waga docelowa (kg)', date: 'Data docelowa', info: 'Ustaw wagę i datę. Szacujemy czas, dzienne tempo i postęp. Plan biegnie od dnia ustawienia celu do daty docelowej.', analysis: 'Analiza', trendEta: 'ETA (trend)', daily: 'Dzienne wymagane', progress: 'Postęp', plan: 'Plan vs. stan', etaNa: 'Brak trendu', day: 'dzień', days: 'dni', start: 'Start', end: 'Cel', paceAhead: 'Przed planem', paceOn: 'Zgodnie z planem', paceBehind: 'Za planem' };
+    const map = state.language==='en'?en:(state.language==='pl'?pl:de); return map[key] || key;
+  }
+
+  function paceText() {
+    if (typeof currentWeight !== 'number' || !planSeries.length) return '';
+    const plannedToday = planSeries[Math.min(todayIdx, planSeries.length - 1)]?.value || currentWeight;
+    if (currentWeight < plannedToday - 0.2) return t('paceAhead');
+    if (Math.abs(currentWeight - plannedToday) <= 0.2) return t('paceOn');
+    return t('paceBehind');
   }
 
   function saveGoal() {
-    if (typeof targetW !== 'number' || targetW <= 0) return;
-    const start = typeof startWeight === 'number' ? startWeight : (currentWeight || targetW);
-    state.setGoal({ targetWeight: targetW, targetDate: toKey(targetDate), startWeight: start, active: true });
+    const tw = targetW; if (typeof tw !== 'number' || tw <= 0) return;
+    const startW = typeof startWeight === 'number' ? startWeight : (currentWeight || tw);
+    state.setGoal({ targetWeight: tw, targetDate: toKey(targetDate), startWeight: startW, startDate: toKey(new Date()), active: true });
   }
   function clearGoal() { state.removeGoal(); }
 
@@ -127,7 +132,7 @@ export default function GoalScreen() {
         </View>
 
         <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-          {/* Info */}
+          {/* Info + Inputs */}
           <View style={[styles.card, { backgroundColor: colors.card }]}> 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ color: colors.text, fontWeight: '700' }}>{t('title')}</Text>
@@ -159,7 +164,7 @@ export default function GoalScreen() {
             </View>
           </View>
 
-          {/* Analysis */}
+          {/* KPIs */}
           <View style={[styles.card, { backgroundColor: colors.card }]}> 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -167,24 +172,17 @@ export default function GoalScreen() {
                 <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{t('analysis')}</Text>
               </View>
             </View>
-
             <View style={{ marginTop: 8, gap: 6 }}>
-              <Text style={{ color: colors.muted }}>
-                {t('trendEta')}: {typeof etaDaysByTrend === 'number' ? `${etaDaysByTrend} ${etaDaysByTrend === 1 ? t('day') : t('days')}` : t('etaNa')}
-              </Text>
-              <Text style={{ color: colors.muted }}>
-                {t('daily')}: {typeof dailyNeeded === 'number' ? `${dailyNeeded.toFixed(2)} kg/${t('day')}` : '—'}
-              </Text>
-              <View>
-                <Text style={{ color: colors.muted }}>{t('progress')}: {progressPercent}%</Text>
-                <View style={{ height: 8, backgroundColor: colors.bg, borderRadius: 4, overflow: 'hidden', marginTop: 6 }}>
-                  <View style={{ width: `${progressPercent}%`, height: 8, backgroundColor: colors.primary }} />
-                </View>
+              <Text style={{ color: colors.muted }}>{t('progress')}: {progressPercent}%</Text>
+              <View style={{ height: 8, backgroundColor: colors.bg, borderRadius: 4, overflow: 'hidden', marginTop: 6 }}>
+                <View style={{ width: `${progressPercent}%`, height: 8, backgroundColor: colors.primary }} />
               </View>
+              <Text style={{ color: colors.muted }}>{t('daily')}: {typeof dailyNeeded === 'number' ? `${dailyNeeded.toFixed(2)} kg/${t('day')}` : '—'}</Text>
+              <Text style={{ color: colors.muted }}>{paceText()}</Text>
             </View>
           </View>
 
-          {/* Chart (plan vs actual) */}
+          {/* Chart: full range from start to target, scrollable */}
           <View style={[styles.card, { backgroundColor: colors.card }]}> 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -192,24 +190,34 @@ export default function GoalScreen() {
                 <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{t('plan')}</Text>
               </View>
             </View>
-            <View style={{ marginTop: 8 }}>
-              {planSeries.length > 1 || actualSeries.length > 1 ? (
-                <View>
-                  {/* Simple bars to avoid adding another lib: show two rows of mini-bars */}
-                  <Text style={{ color: colors.muted, marginBottom: 4 }}>Ist</Text>
-                  <View style={{ height: 6, backgroundColor: colors.bg, borderRadius: 3, overflow: 'hidden' }}>
-                    <View style={{ width: '100%', height: 6, backgroundColor: colors.bg }} />
-                  </View>
-                  <Text style={{ color: colors.muted, marginTop: 8, marginBottom: 4 }}>Plan</Text>
-                  <View style={{ height: 6, backgroundColor: colors.bg, borderRadius: 3, overflow: 'hidden' }}>
-                    <View style={{ width: '100%', height: 6, backgroundColor: colors.bg }} />
-                  </View>
-                  <Text style={{ color: colors.muted, marginTop: 8 }}>Hinweis: Detailliertes Liniendiagramm ist in der Analyse verfügbar.</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator>
+              <View style={{ width: chartWidth, paddingVertical: 8 }}>
+                <LineChart
+                  data={actualSeries}
+                  data2={planSeries}
+                  height={240}
+                  width={chartWidth}
+                  color={colors.primary}
+                  color2={'#9c27b0'}
+                  thickness={2}
+                  thickness2={2}
+                  showDataPoints
+                  showDataPoints2
+                  yAxisColor={colors.muted}
+                  xAxisColor={colors.muted}
+                  showYAxisText
+                  yAxisTextStyle={{ color: colors.muted }}
+                  initialSpacing={16}
+                  spacing={32}
+                  areaChart={false}
+                  hideRules={false}
+                />
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
+                  <Text style={{ color: colors.muted }}>{startDateKey}</Text>
+                  <Text style={{ color: colors.muted }}>{targetKey}</Text>
                 </View>
-              ) : (
-                <Text style={{ color: colors.muted }}>Zu wenige Daten</Text>
-              )}
-            </View>
+              </View>
+            </ScrollView>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
