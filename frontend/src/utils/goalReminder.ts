@@ -28,7 +28,7 @@ export async function scheduleGoalReminderIfNeeded(state: AppState, force = fals
     if (meta?.id && !force) return;
 
     // If we need to force re-schedule, cancel previous first
-    if (meta?.id &amp;&amp; force) {
+    if (meta?.id && force) {
       try { await cancelNotification(meta.id); } catch {}
       state.setNotificationMeta('goal_reminder', undefined);
     }
