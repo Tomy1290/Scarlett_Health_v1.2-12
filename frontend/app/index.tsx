@@ -73,6 +73,9 @@ export default function Home() {
   const weeklyEvent = useMemo(() => getCurrentWeeklyEvent(new Date()), []);
   const weeklyEventProgress = useMemo(() => computeEventProgress(dayKeys, state as any, weeklyEvent), [dayKeys, state.days, weeklyEvent.id]);
 
+  // Show motivation only for weight-related weekly events
+  const isWeightEvent = weeklyEvent && (weeklyEvent.id === 'weigh_4' || weeklyEvent.id === 'weigh_early_2' || weeklyEvent.id === 'perfect_2');
+
   // Motivation line (short)
   const [motivation, setMotivation] = useState<string>('');
   useEffect(() => {
