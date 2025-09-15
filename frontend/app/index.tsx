@@ -130,7 +130,17 @@ export default function Home() {
                 {t('Tabletten', 'Pills', 'Tabletki')}
               </Text>
             </View>
+            <TouchableOpacity onPress={() => toggleHelp('pills')}><Ionicons name='information-circle-outline' size={18} color={colors.muted} /></TouchableOpacity>
           </View>
+          {help.pills ? (
+            <Text style={{ color: colors.muted, marginTop: 6 }}>
+              {t(
+                'Tippe auf Morgens/Abends um die Einnahme zu markieren. Du erhältst XP für vollständige Tage und Kettenfortschritte.',
+                'Tap Morning/Evening to mark your intake. You gain XP for complete days and chain progress.',
+                'Stuknij Rano/Wieczorem, aby zaznaczyć przyjęcie. Zdobywasz XP za pełne dni i postęp łańcucha.'
+              )}
+            </Text>
+          ) : null}
 
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 10 }}>
             {/* Morning Button */}
