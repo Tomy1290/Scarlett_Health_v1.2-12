@@ -76,6 +76,7 @@ export type AppState = {
   cycleLogs: Record<string, CycleLog>;
   waterCupMl: number;
   lastChatLeaveAt?: number;
+  heightCm?: number;
 
   setLanguage: (lng: Language) => void;
   setTheme: (t: ThemeName) => void;
