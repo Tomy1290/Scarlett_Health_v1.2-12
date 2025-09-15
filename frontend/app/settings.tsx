@@ -264,22 +264,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Körpergröße (BMI) */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}> 
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name='body' size={18} color={colors.primary} />
-            <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{state.language==='de'?'Körpergröße':(state.language==='pl'?'Wzrost':'Height')}</Text>
-          </View>
-          <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Gib deine Größe in cm ein, um den BMI anzuzeigen.':(state.language==='pl'?'Podaj wzrost w cm, aby wyświetlić BMI.':'Enter your height in cm to show BMI.')}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-            <Text style={{ color: colors.text, width: 160 }}>{state.language==='de'?'Größe':(state.language==='pl'?'Wzrost':'Height')}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <TextInput keyboardType='number-pad' value={heightInput} onChangeText={setHeightInput} onBlur={() => { const n = parseInt((heightInput||'').replace(/[^0-9]/g,'' )||'0',10); const v = Math.max(100, Math.min(230, isNaN(n)?0:n)); state.setHeightCm(v); setHeightInput(v?String(v):''); }} style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, color: colors.text, backgroundColor: colors.input }} />
-              <Text style={{ color: colors.muted, marginLeft: 8 }}>cm</Text>
-            </View>
-          </View>
-          <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Bereich: 100–230 cm.':(state.language==='pl'?'Zakres: 100–230 cm.':'Range: 100–230 cm.')}</Text>
-        </View>
 
         {/* Drinks settings */}
         <View style={[styles.card, { backgroundColor: colors.card }]}> 
