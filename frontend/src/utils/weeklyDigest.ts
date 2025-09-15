@@ -1,6 +1,7 @@
 import { scheduleOneTimeNotification, cancelNotification } from './notifications';
 import type { AppState } from '../store/useStore';
 import { computeExtendedStats } from '../analytics/stats';
+import { getCurrentWeeklyEvent, getWeekRange, computeEventProgress } from '../gamification/events';
 
 function nextWeeklyOnDow(from: Date, targetDow: number, hour = 18, minute = 0) {
   const d = new Date(from);
@@ -15,13 +16,28 @@ function lastWeightDelta7(days: Record<string, any>) {
   const arr = Object.values(days).filter((d: any) => typeof d.weight === 'number' && d.date).sort((a: any,b: any)=> String(a.date).localeCompare(String(b.date)));
   if (arr.length < 2) return 0;
   const end = arr[arr.length - 1];
-  let i = arr.length - 1;
-  let j = i;
+  let j = arr.length - 1;
   const endDate = new Date(end.date);
   const startCut = new Date(endDate); startCut.setDate(endDate.getDate() - 7);
   while (j > 0 && new Date(arr[j].date) >= startCut) j--;
   const ref = arr[Math.max(0, j)];
   return Number(end.weight) - Number(ref.weight);
+}
+
+function countNewAchievements7(state: AppState) {
+  try {
+    const logs = (state.xpLog || []).filter((e: any) => e && e.source === 'achievement');
+    const sevenDaysAgo = Date.now() - 7*24*60*60*1000;
+    let total = 0;
+    for (const e of logs) {
+      if (typeof e.ts === 'number' && e.ts >= sevenDaysAgo) {
+        const m = String(e.note || '').match(/(\d+) unlocks/);
+        if (m) total += parseInt(m[1], 10);
+        else total += 1; // fallback: at least one
+      }
+    }
+    return total;
+  } catch { return 0; }
 }
 
 export async function scheduleWeeklyDigestIfNeeded(state: AppState, force = false) {
@@ -33,13 +49,24 @@ export async function scheduleWeeklyDigestIfNeeded(state: AppState, force = fals
     const next = nextWeeklyOnDow(new Date(), 0 /* Sunday */, 18, 0);
     const stats = computeExtendedStats(state.days);
     const d7 = lastWeightDelta7(state.days);
+
+    // Weekly event status
+    const now = new Date();
+    const { dayKeys } = getWeekRange(now);
+    const evt = getCurrentWeeklyEvent(now);
+    const progress = computeEventProgress(dayKeys, state as any, evt);
+
+    const achNew = countNewAchievements7(state);
+
     const lng = (state.language || 'de') as 'de'|'en'|'pl';
-    const lines = {
-      de: `Wochendigest: XP ${state.xp}, ΔGewicht (7T) ${d7.toFixed(1)} kg, beste Serie ${stats.bestPerfectStreak}.` ,
-      en: `Weekly digest: XP ${state.xp}, Δweight (7d) ${d7.toFixed(1)} kg, best streak ${stats.bestPerfectStreak}.`,
-      pl: `Tygodniowy skrót: XP ${state.xp}, Δwaga (7d) ${d7.toFixed(1)} kg, najlepsza seria ${stats.bestPerfectStreak}.`,
-    } as const;
     const title = lng==='en'?'Weekly progress':(lng==='pl'?'Postępy tygodnia':'Wochenfortschritt');
+
+    const lines = {
+      de: `Wochendigest: XP ${state.xp}, ΔGewicht (7T) ${d7.toFixed(1)} kg, beste Serie ${stats.bestPerfectStreak}. Event: ${progress.completed?'abgeschlossen':`${progress.percent}%`} · Erfolge: ${achNew} neu.` ,
+      en: `Weekly digest: XP ${state.xp}, Δweight (7d) ${d7.toFixed(1)} kg, best streak ${stats.bestPerfectStreak}. Event: ${progress.completed?'completed':`${progress.percent}%`} · Achievements: ${achNew} new.`,
+      pl: `Tygodniowy skrót: XP ${state.xp}, Δwaga (7d) ${d7.toFixed(1)} kg, najlepsza seria ${stats.bestPerfectStreak}. Wydarzenie: ${progress.completed?'ukończone':`${progress.percent}%`} · Osiągnięcia: ${achNew} nowe.`,
+    } as const;
+
     const body = (lines as any)[lng] as string;
     const id = await scheduleOneTimeNotification(title, body, next, 'reminders');
     if (id) state.setNotificationMeta('weekly_digest', { id });

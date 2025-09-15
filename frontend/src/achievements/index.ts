@@ -22,6 +22,24 @@ function weightDelta(s: AchState) { const arr = Object.values(s.days).filter((d)
 function weighedBeforeHourCount(s: AchState, hour = 8) { return count(Object.values(s.days), (d) => typeof d.weight === 'number' && typeof d.weightTime === 'number' && new Date(d.weightTime).getHours() < hour); }
 function trackedAfterHourCount(s: AchState, hour = 22) { return count(Object.values(s.days), (d) => typeof d.weightTime === 'number' && new Date(d.weightTime).getHours() >= hour); }
 
+function plateauBroken(s: AchState): boolean {
+  const arr = Object.values(s.days).filter(d => typeof d.weight === 'number').sort((a,b)=> a.date.localeCompare(b.date));
+  if (arr.length < 18) return false;
+  for (let i=0; i<=arr.length-18; i++) {
+    const plateauWin = arr.slice(i, i+14);
+    const startW = plateauWin[0].weight!;
+    const endW = plateauWin[plateauWin.length-1].weight!;
+    if (Math.abs(endW - startW) <= 0.2) { // ~Plateau 14T <= ±0,2 kg
+      const after = arr.slice(i+14, i+17).map(d=>d.weight!);
+      if (after.length >= 3) {
+        const drop = startW - after[after.length-1];
+        if (drop >= 0.5) return true;
+      }
+    }
+  }
+  return false;
+}
+
 const A: AchievementConfig[] = [
   { id: 'first_steps_7', xp: 50, progress: (s) => Math.min(100, Math.round((appUsageDays(s)/7)*100)), title: (l)=> l==='de'?'Erste Schritte':'First steps', description:(l)=> l==='de'?'7 Tage App verwendet.':'Use the app for 7 days.' },
   { id: 'pillen_profi_7', xp: 100, progress: (s) => Math.min(100, Math.round((complianceDays(s)/7)*100)), title:(l)=> l==='de'?'Pillen-Profi':'Pill pro', description:(l)=> l==='de'?'7 Tage alle Tabletten.':'All pills for 7 days.' },
@@ -32,10 +50,13 @@ const A: AchievementConfig[] = [
   { id: 'tee_liebhaber_20', xp: 120, progress: (s) => Math.min(100, Math.round((gingerTeaDays(s)/20)*100)), title:(l)=> l==='de'?'Tee-Liebhaber':'Tea lover', description:(l)=> l==='de'?'20x Ingwer-Knoblauch-Tee.':'20x ginger-garlic tea.' },
   { id: 'erste_erfolge_2kg', xp: 400, progress: (s) => { const d = weightDelta(s); if (d <= -2) return 100; if (d >= 0) return 0; return Math.min(100, Math.round((Math.abs(d)/2)*100)); }, title:(l)=> l==='de'?'Erste Erfolge':'First success', description:(l)=> l==='de'?'2kg abgenommen.':'Lose 2kg.', requires: ['perfekte_woche_7'] },
   { id: 'fruehaufsteher_30', xp: 200, progress: (s) => Math.min(100, Math.round((weighedBeforeHourCount(s,8)/30)*100)), title:(l)=> l==='de'?'Frühaufsteher':'Early bird', description:(l)=> l==='de'?'30x vor 8:00 gewogen.':'30x weighed before 8:00.' },
+  { id: 'fruehwieger_7', xp: 80, progress: (s) => Math.min(100, Math.round((weighedBeforeHourCount(s,8)/7)*100)), title:(l)=> l==='de'?'Frühwieger 7':'Early weigher 7', description:(l)=> l==='de'?'7x vor 8:00 gewogen.':'7x weighed before 8:00.' },
+  { id: 'fruehwieger_14', xp: 150, progress: (s) => Math.min(100, Math.round((weighedBeforeHourCount(s,8)/14)*100)), title:(l)=> l==='de'?'Frühwieger 14':'Early weigher 14', description:(l)=> l==='de'?'14x vor 8:00 gewogen.':'14x weighed before 8:00.' },
 
   { id: 'pillen_legende_100', xp: 1000, progress: (s) => Math.min(100, Math.round((complianceDays(s)/100)*100)), title:(l)=> l==='de'?'Pillen-Legende':'Pill legend', description:(l)=> l==='de'?'100 Tage alle Tabletten.':'100 days all pills.', requires: ['pillen_profi_7'] },
   { id: 'perfekter_monat_30', xp: 750, progress: (s) => Math.min(100, Math.round((perfectDaysCount(s)/30)*100)), title:(l)=> l==='de'?'Perfekter Monat':'Perfect month', description:(l)=> l==='de'?'30 Tage alle Ziele.':'30 perfect days.', requires: ['perfekte_woche_7'] },
   { id: 'grosser_erfolg_5kg', xp: 800, progress: (s) => { const d = weightDelta(s); if (d <= -5) return 100; if (d >= 0) return 0; return Math.min(100, Math.round((Math.abs(d)/5)*100)); }, title:(l)=> l==='de'?'Großer Erfolg':'Big success', description:(l)=> l==='de'?'5kg abgenommen.':'Lose 5kg.', requires: ['erste_erfolge_2kg'] },
+  { id: 'plateau_geknackt', xp: 300, progress: (s) => plateauBroken(s) ? 100 : 0, title:(l)=> l==='de'?'Plateau geknackt':'Plateau breaker', description:(l)=> l==='de'?'Nach 14T Plateau in 3T ≥0,5 kg minus.':'After 14d plateau, -0.5kg in 3d.' },
 
   { id: 'streak_master_50', xp: 1200, progress: (s) => Math.min(100, Math.round((longestPerfectStreak(s)/50)*100)), title:(l)=> l==='de'?'Streak-Master':'Streak master', description:(l)=> l==='de'?'50 Tage perfekt (Streak).':'50-day perfect streak.', requires: ['perfekter_monat_30'] },
   { id: 'jahres_champion_365', xp: 2500, progress: (s) => Math.min(100, Math.round((complianceDays(s)/365)*100)), title:(l)=> l==='de'?'Jahres-Champion':'Year champion', description:(l)=> l==='de'?'365 Tage Tabletten.':'365 days pills.', requires: ['pillen_legende_100'] },
