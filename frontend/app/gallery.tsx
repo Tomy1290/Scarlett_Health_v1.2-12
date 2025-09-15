@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAppStore } from '../src/store/useStore';
+import { useAppStore, useLevel } from '../src/store/useStore';
 import { pickAndCompress, captureAndCompress, deletePhoto, PhotoMeta } from '../src/utils/photos';
 import { toKey } from '../src/utils/date';
 
@@ -16,6 +16,7 @@ function useThemeColors(theme: string) {
 
 export default function GalleryScreen() {
   const state = useAppStore();
+  const { level } = useLevel();
   const router = useRouter();
   const colors = useThemeColors(state.theme);
 
@@ -61,7 +62,7 @@ export default function GalleryScreen() {
     if (rm) await deletePhoto(rm);
   }
 
-  const t = (key: string) => { const de: Record<string,string> = { title: 'Galerie', add: 'Hinzufügen', none: 'Keine Fotos vorhanden.', today: 'Heute', camera: 'Kamera', gallery: 'Galerie', usage: 'Gespeicherte Fotos' }; const en: Record<string,string> = { title: 'Gallery', add: 'Add', none: 'No photos yet.', today: 'Today', camera: 'Camera', gallery: 'Gallery', usage: 'Stored photos' }; const pl: Record<string,string> = { title: 'Galeria', add: 'Dodaj', none: 'Brak zdjęć.', today: 'Dziś', camera: 'Aparat', gallery: 'Galeria', usage: 'Zapisane zdjęcia' }; return (state.language==='en'?en:(state.language==='pl'?pl:de))[key] || key; };
+  const t = (key: string) => { const de: Record<string,string> = { title: 'Galerie', add: 'Hinzufügen', none: 'Keine Fotos vorhanden.', today: 'Heute', camera: 'Kamera', gallery: 'Galerie', usage: 'Gespeicherte Fotos', compare: 'Vergleich A/B', unlockAt: 'ab Level 32' }; const en: Record<string,string> = { title: 'Gallery', add: 'Add', none: 'No photos yet.', today: 'Today', camera: 'Camera', gallery: 'Gallery', usage: 'Stored photos', compare: 'Compare A/B', unlockAt: 'from level 32' }; const pl: Record<string,string> = { title: 'Galeria', add: 'Dodaj', none: 'Brak zdjęć.', today: 'Dziś', camera: 'Aparat', gallery: 'Galeria', usage: 'Zapisane zdjęcia', compare: 'Porównanie A/B', unlockAt: 'od poziomu 32' }; return (state.language==='en'?en:(state.language==='pl'?pl:de))[key] || key; };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -85,10 +86,23 @@ export default function GalleryScreen() {
               <TouchableOpacity onPress={() => addPhotoForToday('gallery')} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('gallery')}</Text></TouchableOpacity>
             </View>
           </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+            {level >= 32 ? (
+              <TouchableOpacity onPress={() => router.push('/gallery-compare')} style={[styles.badge, { borderColor: colors.primary }]}> 
+                <Text style={{ color: colors.text }}>{t('compare')}</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name='lock-closed' size={14} color={colors.muted} />
+                <Text style={{ color: colors.muted }}>{t('compare')} {t('unlockAt')}</Text>
+              </View>
+            )}
+            <View />
+          </View>
         </View>
 
         {daysWithPhotos.length === 0 ? (
-          <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <View style={[styles.card, { backgroundColor: colors.card }]}> 
             <Text style={{ color: colors.muted }}>{t('none')}</Text>
           </View>
         ) : null}
