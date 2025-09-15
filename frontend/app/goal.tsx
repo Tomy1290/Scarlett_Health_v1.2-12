@@ -81,6 +81,19 @@ export default function GoalScreen() {
   const dailyNeeded = useMemo(() => {
     if (typeof currentWeight !== 'number' || typeof targetW !== 'number' || daysRemaining <= 0) return undefined;
     const delta = currentWeight - targetW; return Math.max(0, delta / daysRemaining);
+  // Fetch short motivation for goal screen
+  React.useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        if (!state.aiInsightsEnabled) return;
+        const m = await onlineMotivation(state as any);
+        if (active) setMotivation(m);
+      } catch {}
+    })();
+    return () => { active = false; };
+  }, [state.language, state.days, state.goal]);
+
   }, [currentWeight, targetW, daysRemaining]);
 
   const progressPercent = useMemo(() => {
