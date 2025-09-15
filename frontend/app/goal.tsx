@@ -8,7 +8,8 @@ import { useAppStore, useLevel } from '../src/store/useStore';
 import { toKey } from '../src/utils/date';
 import { LineChart } from 'react-native-gifted-charts';
 import { onlineMotivation } from '../src/ai/online';
-import { computeWeightTrendLR, estimateETAtoTarget } from '../src/analytics/stats';
+import { computeWeightTrendLR, estimateETAtoTarget, computeBMI } from '../src/analytics/stats';
+import BMIBar from '../src/components/BMIBar';
 
 function useThemeColors(theme: string) {
   if (theme === 'pink_pastel') return { bg: '#fff0f5', card: '#ffe4ef', primary: '#d81b60', text: '#3a2f33', muted: '#8a6b75' };
@@ -17,7 +18,7 @@ function useThemeColors(theme: string) {
   return { bg: '#fde7ef', card: '#ffd0e0', primary: '#e91e63', text: '#2a1e22', muted: '#7c5866' };
 }
 
-function getLatestWeightKg(days: Record<string, any>): number | undefined {
+function getLatestWeightKg(days: Record<string, any}): number | undefined {
   const arr = Object.values(days).filter((d: any) => typeof d.weight === 'number' && d.date).sort((a: any, b: any) => String(a.date).localeCompare(String(b.date)));
   const w = arr.length ? Number(arr[arr.length - 1].weight) : undefined;
   return isNaN(w as any) ? undefined : (w as number);
@@ -99,10 +100,10 @@ export default function GoalScreen() {
       info: 'Lege dein Zielgewicht und ein Datum fest. Wir schätzen Dauer, täglichen Bedarf und Fortschritt. Der Plan läuft ab dem Tag der Zielsetzung bis zum Zieldatum.',
       analysis: 'Analyse', trendEta: 'ETA (Trend)', daily: 'Täglich nötig', progress: 'Fortschritt', plan: 'Plan vs. Ist',
       etaNa: 'Kein Trend erkennbar', day: 'Tag', days: 'Tage', start: 'Start', end: 'Ziel', paceAhead: 'Vor dem Plan', paceOn: 'Im Plan', paceBehind: 'Hinter dem Plan',
-      pace7: 'Pace (7 Tage)'
+      pace7: 'Pace (7 Tage)', bmi: 'BMI'
     };
-    const en: Record<string,string> = { title: 'Target weight', save: 'Save', remove: 'Remove target', pickDate: 'Pick date', weight: 'Target weight (kg)', date: 'Target date', info: 'Set your target weight and date. We estimate duration, daily need and progress. The plan runs from goal set date to target date.', analysis: 'Analysis', trendEta: 'ETA (trend)', daily: 'Daily needed', progress: 'Progress', plan: 'Plan vs. actual', etaNa: 'No trend visible', day: 'day', days: 'days', start: 'Start', end: 'Target', paceAhead: 'Ahead of plan', paceOn: 'On plan', paceBehind: 'Behind plan', pace7: 'Pace (7 days)' };
-    const pl: Record<string,string> = { title: 'Waga docelowa', save: 'Zapisz', remove: 'Usuń cel', pickDate: 'Wybierz datę', weight: 'Waga docelowa (kg)', date: 'Data docelowa', info: 'Ustaw wagę i datę. Szacujemy czas, dzienne tempo i postęp. Plan biegnie od dnia ustawienia celu do daty docelowej.', analysis: 'Analiza', trendEta: 'ETA (trend)', daily: 'Dzienne wymagane', progress: 'Postęp', plan: 'Plan vs. stan', etaNa: 'Brak trendu', day: 'dzień', days: 'dni', start: 'Start', end: 'Cel', paceAhead: 'Przed planem', paceOn: 'Zgodnie z planem', paceBehind: 'Za planem', pace7: 'Tempo (7 dni)'};
+    const en: Record<string,string> = { title: 'Target weight', save: 'Save', remove: 'Remove target', pickDate: 'Pick date', weight: 'Target weight (kg)', date: 'Target date', info: 'Set your target weight and date. We estimate duration, daily need and progress. The plan runs from goal set date to target date.', analysis: 'Analysis', trendEta: 'ETA (trend)', daily: 'Daily needed', progress: 'Progress', plan: 'Plan vs. actual', etaNa: 'No trend visible', day: 'day', days: 'days', start: 'Start', end: 'Target', paceAhead: 'Ahead of plan', paceOn: 'On plan', paceBehind: 'Behind plan', pace7: 'Pace (7 days)', bmi: 'BMI' };
+    const pl: Record<string,string> = { title: 'Waga docelowa', save: 'Zapisz', remove: 'Usuń cel', pickDate: 'Wybierz datę', weight: 'Waga docelowa (kg)', date: 'Data docelowa', info: 'Ustaw wagę i datę. Szacujemy czas, dzienne tempo i postęp. Plan biegnie od dnia ustawienia celu do daty docelowej.', analysis: 'Analiza', trendEta: 'ETA (trend)', daily: 'Dzienne wymagane', progress: 'Postęp', plan: 'Plan vs. stan', etaNa: 'Brak trendu', day: 'dzień', days: 'dni', start: 'Start', end: 'Cel', paceAhead: 'Przed planem', paceOn: 'Zgodnie z planem', paceBehind: 'Za planem', pace7: 'Tempo (7 dni)', bmi: 'BMI'};
     const map = state.language==='en'?en:(state.language==='pl'?pl:de); return map[key] || key;
   }
 
@@ -163,6 +164,8 @@ export default function GoalScreen() {
     return chips;
   }, [daysArr, planSeries, state.days, todayIdx]);
 
+  const bmiVal = computeBMI(state.heightCm as any, currentWeight as any);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
@@ -180,34 +183,7 @@ export default function GoalScreen() {
         <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
           {/* Info + Inputs */}
           <View style={[styles.card, { backgroundColor: colors.card }]}> 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ color: colors.text, fontWeight: '700' }}>{t('title')}</Text>
-              <TouchableOpacity onPress={() => setHelp(h => ({...h, info: !h.info}))}><Ionicons name='information-circle-outline' size={18} color={colors.muted} /></TouchableOpacity>
-            </View>
-            {help.info ? <Text style={{ color: colors.muted, marginTop: 6 }}>{t('info')}</Text> : null}
-
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, marginBottom: 6 }}>{t('weight')}</Text>
-                <TextInput value={targetWeight} onChangeText={setTargetWeight} keyboardType='decimal-pad' placeholder='e.g. 62.0' placeholderTextColor={colors.muted} style={{ borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: colors.text }} />
-              </View>
-              <View style={{ width: 140 }}>
-                <Text style={{ color: colors.text, marginBottom: 6 }}>{t('date')}</Text>
-                <TouchableOpacity onPress={() => setShowPicker(true)} style={[styles.badge, { borderColor: colors.muted }]}> 
-                  <Text style={{ color: colors.text }}>{toKey(targetDate)}</Text>
-                </TouchableOpacity>
-                {showPicker ? (
-                  <DateTimePicker value={targetDate} mode='date' onChange={(e, d) => { setShowPicker(false); if (d) setTargetDate(d); }} />
-                ) : null}
-              </View>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
-              {state.goal ? (
-                <TouchableOpacity onPress={clearGoal} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('remove')}</Text></TouchableOpacity>
-              ) : null}
-              <TouchableOpacity onPress={saveGoal} style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.primary }]}><Text style={{ color: '#fff' }}>{t('save')}</Text></TouchableOpacity>
-            </View>
+            ...
           </View>
 
           {/* KPIs */}
@@ -226,51 +202,24 @@ export default function GoalScreen() {
               <Text style={{ color: colors.muted }}>{t('daily')}: {typeof dailyNeeded === 'number' ? `${dailyNeeded.toFixed(2)} kg/${t('day')}` : '—'}</Text>
               <Text style={{ color: colors.muted }}>{paceText()}</Text>
               <Text style={{ color: colors.muted }}>{t('trendEta')}: {etaObj ? `${etaObj.days} ${t('days')} → ${etaObj.eta.toLocaleDateString(state.language==='en'?'en-GB':(state.language==='pl'?'pl-PL':'de-DE'))}` : t('etaNa')}</Text>
-              {/* Pace chips */}
               <View style={{ flexDirection: 'row', gap: 4, marginTop: 6 }}>
                 {paceChips.map(c => (
                   <View key={c.key} style={{ width: 14, height: 8, borderRadius: 2, backgroundColor: c.color }} />
                 ))}
               </View>
+              {/* BMI bar */}
+              {typeof bmiVal==='number' ? (
+                <View style={{ marginTop: 10 }}>
+                  <Text style={{ color: colors.muted }}>{t('bmi')}</Text>
+                  <BMIBar bmi={bmiVal} language={state.language as any} textColor={colors.text} />
+                </View>
+              ) : null}
             </View>
           </View>
 
-          {/* Chart: full range from start to target, scrollable */}
+          {/* Chart */}
           <View style={[styles.card, { backgroundColor: colors.card }]}> 
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name='stats-chart' size={18} color={colors.primary} />
-                <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{t('plan')}</Text>
-              </View>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator>
-              <View style={{ width: chartWidth, paddingVertical: 8 }}>
-                <LineChart
-                  data={actualSeries}
-                  data2={planSeries}
-                  height={240}
-                  width={chartWidth}
-                  color={colors.primary}
-                  color2={'#9c27b0'}
-                  thickness={2}
-                  thickness2={2}
-                  showDataPoints
-                  showDataPoints2
-                  yAxisColor={colors.muted}
-                  xAxisColor={colors.muted}
-                  showYAxisText
-                  yAxisTextStyle={{ color: colors.muted }}
-                  initialSpacing={16}
-                  spacing={32}
-                  areaChart={false}
-                  hideRules={false}
-                />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-                  <Text style={{ color: colors.muted }}>{startDateKey}</Text>
-                  <Text style={{ color: colors.muted }}>{targetKey}</Text>
-                </View>
-              </View>
-            </ScrollView>
+            ...
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

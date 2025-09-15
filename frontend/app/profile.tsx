@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAppStore } from '../src/store/useStore';
 import { computeBMI, bmiCategory } from '../src/analytics/stats';
+import BMIBar from '../src/components/BMIBar';
 
 function useThemeColors(theme: string) {
   if (theme === 'pink_pastel') return { bg: '#fff0f5', card: '#ffe4ef', primary: '#d81b60', text: '#3a2f33', muted: '#8a6b75', input: '#fff' };
@@ -36,9 +37,9 @@ export default function ProfileScreen() {
   const bmiCat = bmiCategory(bmi, state.language as any);
 
   const t = (key: string) => {
-    const de: Record<string,string> = { profile: 'Profil', save: 'Speichern', name: 'Name', birth: 'Geburtsdatum', gender: 'Geschlecht', female: 'Weiblich', male: 'Männlich', other: 'Divers', height: 'Größe (cm)', avatar: 'Avatar', pick: 'Auswählen', remove: 'Entfernen', bmi: 'BMI', }; 
-    const en: Record<string,string> = { profile: 'Profile', save: 'Save', name: 'Name', birth: 'Birthdate', gender: 'Gender', female: 'Female', male: 'Male', other: 'Other', height: 'Height (cm)', avatar: 'Avatar', pick: 'Pick', remove: 'Remove', bmi: 'BMI', };
-    const pl: Record<string,string> = { profile: 'Profil', save: 'Zapisz', name: 'Imię', birth: 'Data urodzenia', gender: 'Płeć', female: 'Kobieta', male: 'Mężczyzna', other: 'Inna', height: 'Wzrost (cm)', avatar: 'Avatar', pick: 'Wybierz', remove: 'Usuń', bmi: 'BMI', };
+    const de: Record<string,string> = { profile: 'Profil', save: 'Speichern', name: 'Name', birth: 'Geburtsdatum', gender: 'Geschlecht', female: 'Weiblich', male: 'Männlich', other: 'Divers', height: 'Größe (cm)', avatar: 'Avatar', pick: 'Auswählen', remove: 'Entfernen', bmi: 'BMI', camera: 'Kamera' }; 
+    const en: Record<string,string> = { profile: 'Profile', save: 'Save', name: 'Name', birth: 'Birthdate', gender: 'Gender', female: 'Female', male: 'Male', other: 'Other', height: 'Height (cm)', avatar: 'Avatar', pick: 'Pick', remove: 'Remove', bmi: 'BMI', camera: 'Camera' };
+    const pl: Record<string,string> = { profile: 'Profil', save: 'Zapisz', name: 'Imię', birth: 'Data urodzenia', gender: 'Płeć', female: 'Kobieta', male: 'Mężczyzna', other: 'Inna', height: 'Wzrost (cm)', avatar: 'Avatar', pick: 'Wybierz', remove: 'Usuń', bmi: 'BMI', camera: 'Aparat' };
     const map = state.language==='en'?en:(state.language==='pl'?pl:de); return map[key] || key;
   };
 
@@ -86,7 +87,7 @@ export default function ProfileScreen() {
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
               <TouchableOpacity onPress={pickAvatar} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('pick')}</Text></TouchableOpacity>
-              <TouchableOpacity onPress={takeAvatar} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>Kamera</Text></TouchableOpacity>
+              <TouchableOpacity onPress={takeAvatar} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('camera')}</Text></TouchableOpacity>
               {avatar ? (<TouchableOpacity onPress={()=> setAvatar('')} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('remove')}</Text></TouchableOpacity>) : null}
             </View>
           </View>
@@ -118,7 +119,11 @@ export default function ProfileScreen() {
             <Text style={{ color: colors.text, fontWeight: '700' }}>{t('height')}</Text>
             <TextInput value={height} onChangeText={setHeight} keyboardType='number-pad' placeholder='170' placeholderTextColor={colors.muted} style={{ borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: colors.text, marginTop: 8, backgroundColor: colors.input }} />
             <View style={{ marginTop: 8 }}>
-              <Text style={{ color: colors.muted }}>{t('bmi')}: {typeof bmi==='number' ? bmi.toFixed(1) : '—'} {bmiCat.label ? `· ${bmiCat.label}` : ''}</Text>
+              {typeof bmi==='number' ? (
+                <BMIBar bmi={bmi} language={state.language as any} textColor={colors.text} />
+              ) : (
+                <Text style={{ color: colors.muted }}>{t('bmi')}: —</Text>
+              )}
             </View>
           </View>
         </ScrollView>
