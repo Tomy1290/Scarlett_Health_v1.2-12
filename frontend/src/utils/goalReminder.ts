@@ -25,7 +25,7 @@ export async function scheduleGoalReminderIfNeeded(state: AppState, force = fals
     }
 
     // If we already have one and not forced, keep it
-    if (meta?.id &amp;&amp; !force) return;
+    if (meta?.id && !force) return;
 
     // If we need to force re-schedule, cancel previous first
     if (meta?.id &amp;&amp; force) {
