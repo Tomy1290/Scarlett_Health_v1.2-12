@@ -7,6 +7,7 @@ import { computeAchievements } from "../achievements";
 import { predictNextStart, getFertileWindow } from "../utils/cycle";
 import { ensureAndroidChannel, ensureNotificationPermissions, cancelNotification, scheduleOneTimeNotification } from "../utils/notifications";
 import { toHHMM } from "../utils/time";
+import { scheduleGoalReminderIfNeeded } from "../utils/goalReminder";
 
 export type Language = "de" | "en" | "pl";
 export type ThemeName = "pink_default" | "pink_pastel" | "pink_vibrant" | "golden_pink";
@@ -126,19 +127,19 @@ function clamp(n: number, min: number, max: number) { return Math.max(min, Math.
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      days: {}, reminders: [], chat: [], saved: [], achievementsUnlocked: [], xp: 0, xpBonus: 0, language: "de", theme: "pink_default", appVersion: "1.2.24",
+      days: {}, reminders: [], chat: [], saved: [], achievementsUnlocked: [], xp: 0, xpBonus: 0, language: "de", theme: "pink_default", appVersion: "1.2.25",
       currentDate: toKey(new Date()), notificationMeta: {}, hasSeededReminders: false, showOnboarding: true, eventHistory: {}, legendShown: false, rewardsSeen: {}, profileAlias: '', xpLog: [],
       aiInsightsEnabled: true, aiFeedback: {}, eventsEnabled: true, cycles: [], cycleLogs: {}, waterCupMl: 250, lastChatLeaveAt: 0,
 
       setLanguage: (lng) => { set({ language: lng }); get().recalcAchievements(); },
-      setTheme: (t) => { const lvl = Math.floor(get().xp / 100) + 1; if (t === 'golden_pink' && lvl < 75) { return; } set({ theme: t }); get().recalcAchievements(); },
+      setTheme: (t) => { const lvl = Math.floor(get().xp / 100) + 1; if (t === 'golden_pink' &amp;&amp; lvl &lt; 75) { return; } set({ theme: t }); get().recalcAchievements(); },
       goPrevDay: () => { const cur = new Date(get().currentDate); const prev = new Date(cur); prev.setDate(cur.getDate() - 1); set({ currentDate: toKey(prev) }); },
-      goNextDay: () => { const cur = new Date(get().currentDate); const next = new Date(cur); next.setDate(cur.getDate() + 1); const todayKey = toKey(new Date()); const nextKey = toKey(next); if (nextKey > todayKey) return; set({ currentDate: nextKey }); },
+      goNextDay: () => { const cur = new Date(get().currentDate); const next = new Date(cur); next.setDate(cur.getDate() + 1); const todayKey = toKey(new Date()); const nextKey = toKey(next); if (nextKey &gt; todayKey) return; set({ currentDate: nextKey }); },
       goToday: () => set({ currentDate: toKey(new Date()) }),
       ensureDay: (key) => { const days = get().days; if (!days[key]) set({ days: { ...days, [key]: defaultDay(key) } }); },
 
-      toggleFlag: (key, type) => { const days = { ...get().days }; const d = days[key] ?? defaultDay(key); const before = d.drinks[type] as boolean; const now = !before; d.drinks = { ...d.drinks, [type]: now } as any; const xpFlags = { ...(d.xpToday || {}) }; let xpDelta = 0; if (now && !xpFlags[type]) { xpDelta += 10; xpFlags[type] = true; } d.xpToday = xpFlags; d.activityLog = [...(d.activityLog||[]), { ts: Date.now(), time: toHHMM(new Date()) || undefined, action: `flag_${type}`, value: now }]; days[key] = d; if (xpDelta !== 0) set({ days, xp: get().xp + xpDelta, xpLog: [...(get().xpLog||[]), { id: `xp:${Date.now()}`, ts: Date.now(), amount: xpDelta, source: 'other', note: type }] }); else set({ days }); get().recalcAchievements(); },
-      togglePill: (key, type) => { const days = { ...get().days }; const d = days[key] ?? defaultDay(key); const before = d.pills[type] as boolean; const now = !before; d.pills = { ...d.pills, [type]: now } as any; const xpFlags = { ...(d.xpToday || {}) }; let xpDelta = 0; const pillKey = `pills_${type}`; if (now && !xpFlags[pillKey]) { xpDelta += 15; xpFlags[pillKey] = true; } d.xpToday = xpFlags; d.activityLog = [...(d.activityLog||[]), { ts: Date.now(), time: toHHMM(new Date()) || undefined, action: `pill_${type}`, value: now }]; days[key] = d; if (xpDelta !== 0) set({ days, xp: get().xp + xpDelta, xpLog: [...(get().xpLog||[]), { id: `xp:${Date.now()}`, ts: Date.now(), amount: xpDelta, source: 'other', note: `pills_${type}` }] }); else set({ days }); get().recalcAchievements(); },
+      toggleFlag: (key, type) => { const days = { ...get().days }; const d = days[key] ?? defaultDay(key); const before = d.drinks[type] as boolean; const now = !before; d.drinks = { ...d.drinks, [type]: now } as any; const xpFlags = { ...(d.xpToday || {}) }; let xpDelta = 0; if (now &amp;&amp; !xpFlags[type]) { xpDelta += 10; xpFlags[type] = true; } d.xpToday = xpFlags; d.activityLog = [...(d.activityLog||[]), { ts: Date.now(), time: toHHMM(new Date()) || undefined, action: `flag_${type}`, value: now }]; days[key] = d; if (xpDelta !== 0) set({ days, xp: get().xp + xpDelta, xpLog: [...(get().xpLog||[]), { id: `xp:${Date.now()}`, ts: Date.now(), amount: xpDelta, source: 'other', note: type }] }); else set({ days }); get().recalcAchievements(); },
+      togglePill: (key, type) => { const days = { ...get().days }; const d = days[key] ?? defaultDay(key); const before = d.pills[type] as boolean; const now = !before; d.pills = { ...d.pills, [type]: now } as any; const xpFlags = { ...(d.xpToday || {}) }; let xpDelta = 0; const pillKey = `pills_${type}`; if (now &amp;&amp; !xpFlags[pillKey]) { xpDelta += 15; xpFlags[pillKey] = true; } d.xpToday = xpFlags; d.activityLog = [...(d.activityLog||[]), { ts: Date.now(), time: toHHMM(new Date()) || undefined, action: `pill_${type}`, value: now }]; days[key] = d; if (xpDelta !== 0) set({ days, xp: get().xp + xpDelta, xpLog: [...(get().xpLog||[]), { id: `xp:${Date.now()}`, ts: Date.now(), amount: xpDelta, source: 'other', note: `pills_${type}` }] }); else set({ days }); get().recalcAchievements(); },
       setWeight: (key, weight) => { const days = { ...get().days }; const d = days[key] ?? defaultDay(key); d.weight = weight; d.weightTime = Date.now(); d.activityLog = [...(d.activityLog||[]), { ts: Date.now(), time: toHHMM(new Date()) || undefined, action: 'weight_set', value: weight }]; days[key] = d; set({ days }); get().recalcAchievements(); },
 
       // Drinks increment/decrement with XP rules (reversible):
@@ -161,8 +162,8 @@ export const useAppStore = create<AppState>()(
         if (type === 'coffee') {
           const oldExcess = Math.max(0, prev - 6);
           const newExcess = Math.max(0, next - 6);
-          if (newExcess > oldExcess) xpDelta -= 10 * (newExcess - oldExcess);
-          if (newExcess < oldExcess) xpDelta += 10 * (oldExcess - newExcess);
+          if (newExcess &gt; oldExcess) xpDelta -= 10 * (newExcess - oldExcess);
+          if (newExcess &lt; oldExcess) xpDelta += 10 * (oldExcess - newExcess);
         }
 
         if (xpDelta !== 0) {
@@ -173,12 +174,18 @@ export const useAppStore = create<AppState>()(
         get().recalcAchievements();
       },
 
-      setGoal: (goal) => { set({ goal }); get().recalcAchievements(); },
-      removeGoal: () => { set({ goal: undefined }); get().recalcAchievements(); },
+      setGoal: (goal) => { set({ goal }); get().recalcAchievements(); try { scheduleGoalReminderIfNeeded(get() as any, true); } catch {} },
+      removeGoal: () => {
+        const meta = get().notificationMeta['goal_reminder'];
+        if (meta?.id) { try { cancelNotification(meta.id); } catch {} }
+        get().setNotificationMeta('goal_reminder', undefined);
+        set({ goal: undefined });
+        get().recalcAchievements();
+      },
       addReminder: (r) => { set({ reminders: [r, ...get().reminders] }); get().recalcAchievements(); },
       updateReminder: (id, patch) => set({ reminders: get().reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)) }),
       deleteReminder: (id) => { set({ reminders: get().reminders.filter((r) => r.id !== id) }); get().recalcAchievements(); },
-      addChat: (m) => { const lvl = Math.floor(get().xp / 100) + 1; let msg = m; if (m.sender === 'user' && typeof m.text === 'string' && m.text.length > 120 && lvl < 50) { msg = { ...m, text: m.text.slice(0, 120) }; } set({ chat: [...get().chat, msg] }); get().recalcAchievements(); },
+      addChat: (m) => { const lvl = Math.floor(get().xp / 100) + 1; let msg = m; if (m.sender === 'user' &amp;&amp; typeof m.text === 'string' &amp;&amp; m.text.length &gt; 120 &amp;&amp; lvl &lt; 50) { msg = { ...m, text: m.text.slice(0, 120) }; } set({ chat: [...get().chat, msg] }); get().recalcAchievements(); },
       addSaved: (s) => { set({ saved: [s, ...get().saved] }); get().recalcAchievements(); },
       updateSaved: (id, patch) => { const next = (get().saved||[]).map((s)=> s.id===id ? { ...s, ...patch } : s); set({ saved: next }); },
       deleteSaved: (id) => { set({ saved: get().saved.filter((s) => s.id !== id) }); get().recalcAchievements(); },
@@ -186,7 +193,7 @@ export const useAppStore = create<AppState>()(
       setNotificationMeta: (remId, meta) => set({ notificationMeta: { ...get().notificationMeta, [remId]: meta } }),
       setHasSeededReminders: (v) => set({ hasSeededReminders: v }),
       setShowOnboarding: (v) => set({ showOnboarding: v }),
-      completeEvent: (weekKey, entry) => { const existing = get().eventHistory[weekKey]; if (existing?.completed) return; let bonus = 0; try { const { EVENTS } = require('../gamification/events'); const evt = (EVENTS as any[]).find((e) => e.id === entry.id); if (evt && (evt as any).bonusPercent) bonus = Math.round(entry.xp * (evt as any).bonusPercent); } catch {} const total = entry.xp + bonus; const log = [...(get().xpLog||[]), { id: `${weekKey}:${Date.now()}`, ts: Date.now(), amount: total, source: 'event', note: entry.id }]; set({ eventHistory: { ...get().eventHistory, [weekKey]: { id: entry.id, completed: true, xp: total } }, xp: get().xp + total, xpLog: log }); },
+      completeEvent: (weekKey, entry) => { const existing = get().eventHistory[weekKey]; if (existing?.completed) return; let bonus = 0; try { const { EVENTS } = require('../gamification/events'); const evt = (EVENTS as any[]).find((e) => e.id === entry.id); if (evt &amp;&amp; (evt as any).bonusPercent) bonus = Math.round(entry.xp * (evt as any).bonusPercent); } catch {} const total = entry.xp + bonus; const log = [...(get().xpLog||[]), { id: `${weekKey}:${Date.now()}`, ts: Date.now(), amount: total, source: 'event', note: entry.id }]; set({ eventHistory: { ...get().eventHistory, [weekKey]: { id: entry.id, completed: true, xp: total } }, xp: get().xp + total, xpLog: log }); },
       setLegendShown: (v) => set({ legendShown: v }),
       setRewardSeen: (key, v) => set({ rewardsSeen: { ...(get().rewardsSeen||{}), [key]: v } }),
       setProfileAlias: (alias) => set({ profileAlias: alias }),
@@ -214,7 +221,7 @@ export const useAppStore = create<AppState>()(
         all[dateKey] = merged; set({ cycleLogs: all }); },
       clearCycleLog: (dateKey) => { const all = { ...(get().cycleLogs || {}) }; delete all[dateKey]; set({ cycleLogs: all }); },
 
-      recalcAchievements: () => { const state = get(); const base = computeAchievements({ days: state.days, goal: state.goal, reminders: state.reminders, chat: state.chat, saved: state.saved, achievementsUnlocked: state.achievementsUnlocked, xp: state.xp, language: state.language, theme: state.theme }); const prevSet = new Set(state.achievementsUnlocked); const newUnlocks = base.unlocked.filter((id) => !prevSet.has(id)); let xpDelta = 0; const comboBonus = newUnlocks.length >= 2 ? (newUnlocks.length - 1) * 50 : 0; if (newUnlocks.length > 0) { try { const { getAchievementConfigById } = require('../achievements'); const sum = newUnlocks.reduce((acc: number, id: string) => { const cfg = getAchievementConfigById(id); return acc + (cfg?.xp || 0); }, 0); xpDelta += sum; if (sum > 0) { const addLog = { id: `ach:${Date.now()}`, ts: Date.now(), amount: sum, source: 'achievement', note: `${newUnlocks.length} unlocks` } as XpLogEntry; set({ xpLog: [...(state.xpLog||[]), addLog] }); } } catch {} } if (comboBonus > 0) { const addLog = { id: `combo:${Date.now()}`, ts: Date.now(), amount: comboBonus, source: 'combo', note: `${newUnlocks.length} unlocks combo` } as XpLogEntry; set({ xpLog: [...(get().xpLog||[]), addLog] }); } set({ achievementsUnlocked: base.unlocked, xp: state.xp + xpDelta + comboBonus }); },
+      recalcAchievements: () => { const state = get(); const base = computeAchievements({ days: state.days, goal: state.goal, reminders: state.reminders, chat: state.chat, saved: state.saved, achievementsUnlocked: state.achievementsUnlocked, xp: state.xp, language: state.language, theme: state.theme }); const prevSet = new Set(state.achievementsUnlocked); const newUnlocks = base.unlocked.filter((id) => !prevSet.has(id)); let xpDelta = 0; const comboBonus = newUnlocks.length &gt;= 2 ? (newUnlocks.length - 1) * 50 : 0; if (newUnlocks.length &gt; 0) { try { const { getAchievementConfigById } = require('../achievements'); const sum = newUnlocks.reduce((acc: number, id: string) => { const cfg = getAchievementConfigById(id); return acc + (cfg?.xp || 0); }, 0); xpDelta += sum; if (sum &gt; 0) { const addLog = { id: `ach:${Date.now()}`, ts: Date.now(), amount: sum, source: 'achievement', note: `${newUnlocks.length} unlocks` } as XpLogEntry; set({ xpLog: [...(state.xpLog||[]), addLog] }); } } catch {} } if (comboBonus &gt; 0) { const addLog = { id: `combo:${Date.now()}`, ts: Date.now(), amount: comboBonus, source: 'combo', note: `${newUnlocks.length} unlocks combo` } as XpLogEntry; set({ xpLog: [...(get().xpLog||[]), addLog] }); } set({ achievementsUnlocked: base.unlocked, xp: state.xp + xpDelta + comboBonus }); },
 
       scheduleCycleNotifications: async () => {
         try {
@@ -230,11 +237,11 @@ export const useAppStore = create<AppState>()(
             const minus2 = new Date(day0); minus2.setDate(day0.getDate() - 2);
             const title0 = get().language==='en' ? 'Period expected today' : (get().language==='pl'?'Okres spodziewany dziś':'Periode heute erwartet');
             const title2 = get().language==='en' ? 'Period in 2 days' : (get().language==='pl'?'Okres za 2 dni':'Periode in 2 Tagen erwartet');
-            if (+minus2 > +new Date()) {
+            if (+minus2 &gt; +new Date()) {
               const id2 = await scheduleOneTimeNotification(title2, '', minus2, 'cycle');
               if (id2) get().setNotificationMeta('cycle_period_minus2', { id: id2 });
             }
-            if (+day0 > +new Date()) {
+            if (+day0 &gt; +new Date()) {
               const id0 = await scheduleOneTimeNotification(title0, '', day0, 'cycle');
               if (id0) get().setNotificationMeta('cycle_period_day0', { id: id0 });
             }
@@ -244,11 +251,11 @@ export const useAppStore = create<AppState>()(
             const minus2f = new Date(start); minus2f.setDate(start.getDate() - 2);
             const title0f = get().language==='en' ? 'Fertile phase starts today' : (get().language==='pl'?'Płodna faza zaczyna się dziś':'Fruchtbare Phase ab heute');
             const title2f = get().language==='en' ? 'Fertile phase in 2 days' : (get().language==='pl'?'Płodna faza za 2 dni':'Fruchtbare Phase in 2 Tagen');
-            if (+minus2f > +new Date()) {
+            if (+minus2f &gt; +new Date()) {
               const id2f = await scheduleOneTimeNotification(title2f, '', minus2f, 'cycle');
               if (id2f) get().setNotificationMeta('cycle_fertile_minus2', { id: id2f });
             }
-            if (+start > +new Date()) {
+            if (+start &gt; +new Date()) {
               const id0f = await scheduleOneTimeNotification(title0f, '', start, 'cycle');
               if (id0f) get().setNotificationMeta('cycle_fertile_day0', { id: id0f });
             }
