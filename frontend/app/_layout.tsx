@@ -23,7 +23,7 @@ export default function RootLayout() {
         const state = useAppStore.getState();
         await scheduleCycleNotifications(state);
         try { await registerReminderRepairBackgroundTask(30 * 60); } catch {}
-        try { await scheduleGoalReminderIfNeeded(state as any); } catch {}
+        try { await scheduleGoalReminderIfNeeded(state as any, true); } catch {}
       }
     })();
   }, []);
