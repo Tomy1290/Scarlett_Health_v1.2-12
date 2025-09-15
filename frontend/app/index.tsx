@@ -339,7 +339,7 @@ export default function Home() {
           <View style={{ marginTop: 6 }}>
             <Text style={{ color: colors.text }}>{weeklyEvent.title(language === 'en' ? 'en' : 'de')}</Text>
             <Text style={{ color: colors.muted, marginTop: 4 }}>{weeklyEvent.description(language === 'en' ? 'en' : 'de')}</Text>
-            {!!motivation && <Text style={{ color: colors.text, marginTop: 4 }}>{motivation}</Text>}
+            {isWeightEvent && !!motivation && <Text style={{ color: colors.text, marginTop: 4 }}>{motivation}</Text>}
             <View style={{ height: 6, backgroundColor: colors.bg, borderRadius: 3, overflow: 'hidden', marginTop: 6 }}>
               <View style={{ width: `${weeklyEventProgress.percent}%`, height: 6, backgroundColor: weeklyEventProgress.completed ? '#2bb673' : colors.primary }} />
             </View>
