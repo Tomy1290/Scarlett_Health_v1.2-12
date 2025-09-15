@@ -30,7 +30,7 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style={barStyle as any} />
+      <StatusBar style={barStyle === 'light' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }} />
       {bootVisible ? (
         <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: bg }}>
