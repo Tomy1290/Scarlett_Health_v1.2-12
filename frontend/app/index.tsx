@@ -184,12 +184,12 @@ export default function Home() {
           </View>
         </View>
 
-        {/* Drinks &amp; Sport */}
+        {/* Drinks & Sport */}
         <View style={[styles.card, { backgroundColor: colors.card }]}> 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name='cafe' size={18} color={colors.primary} />
-              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{t('Getränke &amp; Sport', 'Drinks &amp; Sport', 'Napoje i sport')}</Text>
+              <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{t('Getränke & Sport', 'Drinks & Sport', 'Napoje i sport')}</Text>
             </View>
             <TouchableOpacity onPress={() => toggleHelp('drinks')}><Ionicons name='information-circle-outline' size={18} color={colors.muted} /></TouchableOpacity>
           </View>
@@ -244,8 +244,8 @@ export default function Home() {
             <TouchableOpacity onPress={() => { toggleFlag(currentDate, 'slimCoffee'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={[styles.chip, { borderColor: colors.primary, backgroundColor: day.drinks.slimCoffee ? colors.primary : 'transparent' }]} accessibilityLabel={t('Schlankkaffee', 'Slim coffee', 'Kawa fit')} >
               <Text style={{ color: day.drinks.slimCoffee ? '#fff' : colors.text }}>{t('Schlankkaffee', 'Slim coffee', 'Kawa fit')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => { toggleFlag(currentDate, 'gingerGarlicTea'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={[styles.chip, { borderColor: colors.primary, backgroundColor: day.drinks.gingerGarlicTea ? colors.primary : 'transparent' }]} accessibilityLabel={t('Ingwer-Knoblauch-Tee', 'Ginger &amp; garlic tea', 'Herbata imbirowo-czosnkowa')} >
-              <Text style={{ color: day.drinks.gingerGarlicTea ? '#fff' : colors.text }}>{t('Ingwer-Knoblauch-Tee', 'Ginger &amp; garlic tea', 'Herbata imbir-czosnek')}</Text>
+            <TouchableOpacity onPress={() => { toggleFlag(currentDate, 'gingerGarlicTea'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={[styles.chip, { borderColor: colors.primary, backgroundColor: day.drinks.gingerGarlicTea ? colors.primary : 'transparent' }]} accessibilityLabel={t('Ingwer-Knoblauch-Tee', 'Ginger & garlic tea', 'Herbata imbirowo-czosnkowa')} >
+              <Text style={{ color: day.drinks.gingerGarlicTea ? '#fff' : colors.text }}>{t('Ingwer-Knoblauch-Tee', 'Ginger & garlic tea', 'Herbata imbir-czosnek')}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { toggleFlag(currentDate, 'waterCure'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={[styles.chip, { borderColor: colors.primary, backgroundColor: day.drinks.waterCure ? colors.primary : 'transparent' }]} accessibilityLabel={t('Wasserkur', 'Water cure', 'Kuracja wodna')} >
               <Text style={{ color: day.drinks.waterCure ? '#fff' : colors.text }}>{t('Wasserkur', 'Water cure', 'Kuracja wodna')}</Text>

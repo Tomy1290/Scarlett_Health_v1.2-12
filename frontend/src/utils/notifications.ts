@@ -49,7 +49,7 @@ export async function setupAndroidChannels(): Promise<void> {
       lightColor: '#FF2D87', showBadge: true,
     });
     await Notifications.setNotificationChannelAsync('cycle', {
-      name: 'Zyklus &amp; Gesundheit', description: 'Automatische Zyklus-, Eisprung- und Gesundheitsbenachrichtigungen',
+      name: 'Zyklus & Gesundheit', description: 'Automatische Zyklus-, Eisprung- und Gesundheitsbenachrichtigungen',
       importance: Notifications.AndroidImportance.HIGH, sound: 'default', enableVibrate: true,
       vibrationPattern: [0, 500, 250, 500], lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       lightColor: '#FF69B4', showBadge: true,
@@ -57,7 +57,7 @@ export async function setupAndroidChannels(): Promise<void> {
   } catch (error) { console.error('❌ Error setting up Android channels:', error); }
 }
 
-export async function initializeNotifications(): Promise<boolean&gt; {
+export async function initializeNotifications(): Promise<boolean> {
   try {
     const hasPermissions = await requestNotificationPermissions();
     if (!hasPermissions) return false;
@@ -90,7 +90,7 @@ export async function scheduleDailyNext(
   hour: number,
   minute: number,
   channel: 'reminders' | 'cycle' = 'reminders'
-): Promise<string | null&gt; {
+): Promise<string | null> {
   try {
     const when = computeNextOccurrence(hour, minute);
     const now = new Date();
@@ -100,7 +100,7 @@ export async function scheduleDailyNext(
       let diffSec = Math.ceil((+when - +now) / 1000);
       if (diffSec < 60) diffSec = 60; // mindestens 60 Sekunden in die Zukunft
       const nid = await Notifications.scheduleNotificationAsync({
-        content: { title, body, sound: true, ...(Platform.OS === 'android' &amp;&amp; { channelId: channel }) },
+        content: { title, body, sound: true, ...(Platform.OS === 'android' && { channelId: channel }) },
         trigger: { seconds: diffSec },
       });
       try { console.log(`⏲️ [DailyNext-HyperOS] in ${diffSec}s (${when.toLocaleString()})`); } catch {}
@@ -109,7 +109,7 @@ export async function scheduleDailyNext(
     } else {
       // Normal devices can use date triggers
       const nid = await Notifications.scheduleNotificationAsync({
-        content: { title, body, sound: true, ...(Platform.OS === 'android' &amp;&amp; { channelId: channel }) },
+        content: { title, body, sound: true, ...(Platform.OS === 'android' && { channelId: channel }) },
         trigger: { date: when },
       });
       try { console.log(`⏲️ [DailyNext-Standard] at ${when.toLocaleString()}`); } catch {}
@@ -119,11 +119,11 @@ export async function scheduleDailyNext(
   } catch (e) { console.error('❌ scheduleDailyNext error:', e); return null; }
 }
 
-export async function scheduleOneTimeNotification(title: string, body: string, date: Date, channel: 'reminders' | 'cycle' = 'cycle'): Promise<string | null&gt; {
+export async function scheduleOneTimeNotification(title: string, body: string, date: Date, channel: 'reminders' | 'cycle' = 'cycle'): Promise<string | null> {
   try {
     if (date <= new Date()) { logNotificationPlanned('OneTime', title, null); return null; }
     const nid = await Notifications.scheduleNotificationAsync({
-      content: { title, body, sound: true, ...(Platform.OS === 'android' &amp;&amp; { channelId: channel }) },
+      content: { title, body, sound: true, ...(Platform.OS === 'android' && { channelId: channel }) },
       trigger: { date },
     });
     logNotificationPlanned('OneTime', title, date);
@@ -137,7 +137,7 @@ export async function cancelNotification(notificationId: string): Promise<void> 
 
 export async function cancelAllNotifications(): Promise<void> { try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch (e) { console.error('❌ cancelAllNotifications error:', e);} }
 
-export async function getScheduledNotifications(): Promise<Notifications.NotificationRequest[]&gt; { try { return await Notifications.getAllScheduledNotificationsAsync(); } catch { return []; } }
+export async function getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> { try { return await Notifications.getAllScheduledNotificationsAsync(); } catch { return []; } }
 
 export async function testNotification(): Promise<void> {
   try {

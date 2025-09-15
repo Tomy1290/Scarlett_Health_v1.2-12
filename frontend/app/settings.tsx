@@ -194,7 +194,7 @@ export default function SettingsScreen() {
       const keys = ['days','goal','reminders','chat','saved','achievementsUnlocked','xp','language','theme','eventHistory','legendShown','rewardsSeen','profileAlias','xpLog','aiInsightsEnabled','aiFeedback','eventsEnabled','cycles','cycleLogs','waterCupMl'];
       const snapshot: any = {}; for (const k of keys) (snapshot as any)[k] = (data as any)[k];
       const json = JSON.stringify(snapshot, null, 2);
-      if (Platform.OS === 'android' &amp;&amp; (FileSystem as any).StorageAccessFramework) {
+      if (Platform.OS === 'android' && (FileSystem as any).StorageAccessFramework) {
         const saf = (FileSystem as any).StorageAccessFramework;
         const perm = await saf.requestDirectoryPermissionsAsync();
         if (!perm.granted) { Alert.alert('Hinweis', 'Keine Ordnerberechtigung erteilt.'); return; }
@@ -226,7 +226,7 @@ export default function SettingsScreen() {
   const desiredOrder = ['pills_morning','pills_evening','weight','water','sport'];
   const sortedReminders = [...state.reminders].sort((a,b) => { const ai = desiredOrder.indexOf(a.type); const bi = desiredOrder.indexOf(b.type); const aIdx = ai < 0 ? 999 : ai; const bIdx = bi < 0 ? 999 : bi; return aIdx - bIdx; });
 
-  const showBatteryHint = Platform.OS === 'android' &amp;&amp; isHyperOSLike();
+  const showBatteryHint = Platform.OS === 'android' && isHyperOSLike();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
