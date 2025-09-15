@@ -1,69 +1,59 @@
 <analysis>
-The AI engineer's work primarily focused on stabilizing and enhancing the Scarletts Gesundheitstracking application. Initial efforts fixed notification issues, especially on HyperOS devices, by refactoring triggers and adding device-specific logic. The Gugi AI chat was refined, moving its LLM integration from a problematic FastAPI backend to a direct frontend OpenAI API call using . Later, due to user request and issues, the AI was re-integrated via the existing backend's  route, utilizing the Universal Key. Build failures, caused by HTML entities in JSX, were identified and corrected. New features include a comprehensive Target Weight goal tracking system with charts and KPIs, a complete overhaul of the Weekly Events progress calculation to prevent false 100% displays, and the integration of dynamic, AI-powered motivation texts on the dashboard. Extensive UI adjustments, such as icon changes, quick access reordering, and the addition of numerous info fields, were also implemented. The latest iteration involves confirming final details for a weekly goal reminder before pushing the updated version 1.2.24.
+The AI engineer successfully progressed the Scarletts Gesundheitstracking application from version 1.2.24 to 1.2.25, focusing heavily on user-centric enhancements and architectural refinements. Initial tasks included fixing notifications, overhauling weekly event logic, and integrating a comprehensive target weight system. Subsequent work introduced AI-powered motivation texts, a BMI calculator, a dedicated user profile with avatar support, and a robust weight-day photo gallery with client-side compression. Significant effort was dedicated to implementing dynamic level-based feature unlocks, enriching analytics with trends and correlations, and expanding help texts and FAQs. The AI engineer consistently sought user confirmation for design decisions and prioritized iterative development, ensuring alignment with explicit requests while preparing the codebase for final deployment.
 </analysis>
 
 <product_requirements>
-The Scarletts Gesundheitstracking application is an offline-first, multi-language (DE/EN/PL) mobile health tracker. It features a dashboard with daily navigation, XP/Level, modules for Pills, Drinks & Sport, Weight & Goals, and highly customizable reminders. Gamification includes achievements, leveling, and weekly events. A Gugi AI chat provides health assistance, saved messages, and advanced AI insights. An offline leaderboard and comprehensive settings are also included. Recent development aimed at fixing UI/UX issues, refining Gugi AI from a hybrid system (Cloud LLM GPT-4o-mini via FastAPI, then direct frontend, now re-routed through backend proxy) to integrate more robustly with data-driven tips. Other requirements involved editable saved messages, user interaction timestamping, Pro+ and Pro++ heuristics, reliable time-based notifications (cycle/ovulation), refined gamification (Weekly Events logic), and correct Pills section display/XP. Current work focused on addressing HyperOS notification issues, refining chat functionalities (removing local AI, implementing online AI via backend), correcting Weekly Event progress, removing battery optimization warnings, and adding a detailed Target Weight feature.
+The Scarletts Gesundheitstracking application is an offline-first, multi-language (DE/EN/PL) mobile health tracker. It provides a dashboard with daily navigation, XP/Level, modules for Pills, Drinks & Sport, Weight & Goals, and customizable reminders. Gamification includes achievements, leveling, and weekly events. A Gugi AI chat offers health assistance, saved messages, and advanced AI insights. The user requested fixes for HyperOS notification issues, refining Gugi AI to use an online backend proxy (GPT-4o-mini), correcting Weekly Event progress calculation, and adding a detailed Target Weight feature. Further requirements included a BMI calculator, a user profile with avatar upload, a weight-day photo gallery with image compression, dynamic level-based feature unlocks, enhanced analytics (trends, correlations), dynamic goal reminders, a weekly progress digest, improved achievements, saved AI answers (tags/search), and replacing language text with flags in settings.
 </product_requirements>
 
 <key_technical_concepts>
--   **Expo Router**: File-based navigation.
--   **Zustand + react-native-mmkv**: State management.
--   **React Native/Expo SDK**: Core UI, native notifications (), .
--   **FastAPI Backend**: For  LLM proxy, utilizing  with .
--   **Emergent LLM Key**: Universal key for OpenAI (GPT-4o-mini).
--   **Time/Date Management**: Standardization to HH:MM and .
+-   **Expo Router**: File-based navigation for screens.
+-   **Zustand**: State management combined with  for persistence.
+-   **React Native/Expo SDK**: Core UI components, native notifications (), device utilities (, , , ).
+-   **FastAPI Backend**: LLM proxy via  using  and .
 -   **Background Tasks**: ,  for reminder repair.
--   **Chart Library**:  (implied for custom charts).
+-   **Analytics**: Trend calculation, BMI logic, correlations.
 </key_technical_concepts>
 
 <code_architecture>
-The application uses a full-stack architecture with an Expo React Native  and a FastAPI . The  adheres to Expo Router's file-based routing.
+The application utilizes a full-stack architecture with an Expo React Native frontend and a FastAPI backend.
 
-
--   : Global layout. Updated  and . Removed potentially risky  style cast.
--   : User settings. Notification scheduling refined. Battery optimization card was *removed*. Weekly Events and KI Insights toggles *added*. Notification test button *removed*.
--   : Main dashboard. Weekly Event logic re-calibrated. HTML entities (, ) fixed. Pills icon changed. Quick Access order updated. Weekly Event info icon and AI motivation text *added*. Weight card Zielgewicht button *added*.
--   : **New file.** Dedicated screen for Target Weight goal tracking, including interactive chart (actual vs. planned weight), key performance indicators (progress %, daily delta, pace), and an info section.
--   : Zustand store.  bumped.  state (targetWeight, targetDate, startWeight, startDate, active) *added* for target weight feature.
--   : Notification manager. Major refactoring from repeating to one-time future-dated notifications. Device-specific  triggers for HyperOS implemented. All notification setup (handler, permissions, Android channels) consolidated. *HTML entity issues fixed.*
--   : **New file.** Implements a background fetch task to check and re-plan missing reminders, using  and .
--   : **New file.** Utility to schedule weekly goal-related reminders.
--   : **New file.** Centralized client for online LLM calls. Initially for direct OpenAI, now configured to use the backend's  endpoint. Manages online greetings, replies, topics, analyses, and motivation texts.
--   : Weekly events logic. Completely *overhauled* to correctly compute event progress (e.g., water goal based on actual daily needs) and prevent premature 100% completion.
--   : App configuration.  updated to 1.2.24.  is present in .
--   : Dependencies , ,  added.
--   , , , , , : These offline/hybrid AI files and data were *completely removed* during the shift to full online AI via the backend.
--   : Chat screen. Refactored to solely use  for AI interactions (greetings, replies, topics). Recipes feature *removed*.
--   :  with the Universal Key was *added* for backend AI calls.
--   : Backend server. The existing  route is now utilized by the frontend for AI interactions, leveraging  and the . No direct code changes were explicitly made here during this trajectory.
+-   : Global layout, handles notification initialization and deep linking for reminders.
+-   : Main dashboard, displays weekly events, weight card with BMI, AI motivation, quick access, and triggers feature unlock modal.
+-   : New screen for Target Weight goal tracking with chart, KPIs, and AI motivation.
+-   : New screen for user profile, avatar upload using , height input, and BMI display.
+-   : New screen for weight-day photo gallery, showing compressed images and managing storage.
+-   : Manages notification settings, toggles, will be updated to use flags for language selection.
+-   : Displays various analytics including trends, plateau detection, and correlations.
+-   : Expanded with new entries covering recent features.
+-   : Zustand store updated with , , , , ,  states.
+-   : Refactored for robust, device-specific one-time notifications.
+-   : Schedules and manages weekly goal reminders with dynamic content.
+-   : Schedules weekly summary notifications of progress.
+-   : Defines level-based unlock criteria for various app features.
+-   : Handles image picking/capturing, compression (), and file system storage ().
+-   : Centralizes calls to the backend's  endpoint for all online AI interactions (motivation, chat replies).
+-   : Contains logic for BMI calculation, trend analysis (slope, R²), plateau detection, and inter-data correlations.
+-   : Overhauled to correctly calculate weekly event progress.
+-   : New component to visually represent BMI category with a colored bar.
+-   : New modal component to display newly unlocked features upon level progression.
+-   :  updated to .
+-   : Dependencies like ,  added.
 </code_architecture>
 
 <pending_tasks>
--   Confirm the exact time for the weekly goal reminder (default is 09:00 AM on the same weekday as goal setting).
--   Push all latest changes (including goal features, motivation texts, UI adjustments) to the  repository, potentially with a tag as desired by the user.
+-   Add more features to the level-based unlock system, specifically between Level 30 and Level 75.
+-   Create and implement PNG flag assets for language selection in settings.
+-   Adjust existing and add new help texts across the application where sensible.
+-   Expand the FAQ section with relevant topics.
+-   Perform a final comprehensive code review to ensure all functions are correctly linked and integrated.
+-   Push all implemented changes to the specified GitHub repository ().
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer has completed a significant set of features and fixes, updating the application to version 1.2.24. The core of the recent work involved fully integrating the Gugi AI through the existing FastAPI backend, utilizing the . This involved updating  to make calls to  and removing all previous local and direct cloud AI implementations (e.g., , ). The  file was updated with the provided .
-
-A major enhancement is the new Target Weight feature, implemented in . This screen allows users to set a  and , storing these along with  and  in . It displays key performance indicators like progress percentage, daily required weight loss, and a pace indicator (ahead/on/behind plan). A mini-chart visualizes actual versus planned weight from the start date to the target date, supporting horizontal scrolling and marking the current day. This screen is accessible via a new Zielgewicht button in the weight card on .
-
-The calculation logic for Weekly Events in  has been completely re-worked to prevent it from showing 100% prematurely, ensuring accurate progress tracking based on specific, positive goals (e.g., water intake based on daily needs, sport activities).
-
-Furthermore, dynamic, AI-generated motivation texts are now displayed directly within the Weekly Event card on the dashboard, powered by the online AI, designed to fit without scrolling. A new utility  has been implemented to schedule weekly goal-specific reminders.
-
-UI/UX improvements include:
--   Removal of the battery optimization warning card from .
--   Re-adding toggles for Wöchentliche Events and KI Insights to the settings screen.
--   Removal of the notification test button from settings.
--   Changing the Pills icon in the dashboard quick access.
--   Reordering quick access icons on the dashboard to: Chat, Gespeichert, FAQ, Einstellungen.
--   Addition of info icons with contextual explanations to various dashboard sections (e.g., Pills, Weekly Event).
-
-All these changes are currently staged, awaiting final confirmation on the goal reminder time before being pushed to the specified GitHub repository.
+Immediately prior to this summary, the AI engineer has completed significant work including integrating a Galerie button on the Dashboard's weight card, implementing a storage usage display in the gallery screen, and defining a level-based feature unlock system with BMI unlocked at Level 10 and other features up to Level 100. A new  component has been created to show newly unlocked features. Help texts have been expanded for various sections (Gallery, Dashboard, Analysis, Goal), and the FAQ has been significantly enriched. The  and internal  in  are set to . The integration of language flags in settings is prepared but requires creating and implementing PNG assets and updating the UI. The current status is that the AI engineer has implemented many of the user's requests and is awaiting final instructions for the remaining adjustments to the level progression and the language flag integration before the final push.
 </current_work>
 
 <optional_next_step>
-Confirm the desired time (default 09:00 AM) for the weekly goal reminders and then push all implemented changes to the  repository without a tag.
+Add more features to the level-based unlock system, specifically between Level 30 and Level 75, as requested.
 </optional_next_step>
