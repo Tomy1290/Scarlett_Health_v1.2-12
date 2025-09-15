@@ -50,6 +50,7 @@ export default function SettingsScreen() {
   const [customLabel, setCustomLabel] = useState('');
   const [customTime, setCustomTime] = useState('08:00');
   const [cupInput, setCupInput] = useState(String(state.waterCupMl || 250));
+  const [heightInput, setHeightInput] = useState(state.heightCm ? String(state.heightCm) : '');
   const [reminderTimes, setReminderTimes] = useState<Record<string, string>>({});
   const [debugSwitch, setDebugSwitch] = useState(false);
 
@@ -187,7 +188,7 @@ export default function SettingsScreen() {
   async function exportData() {
     try {
       const data = useAppStore.getState();
-      const keys = ['days','goal','reminders','chat','saved','achievementsUnlocked','xp','language','theme','eventHistory','legendShown','rewardsSeen','profileAlias','xpLog','aiInsightsEnabled','aiFeedback','eventsEnabled','cycles','cycleLogs','waterCupMl'];
+      const keys = ['days','goal','reminders','chat','saved','achievementsUnlocked','xp','language','theme','eventHistory','legendShown','rewardsSeen','profileAlias','xpLog','aiInsightsEnabled','aiFeedback','eventsEnabled','cycles','cycleLogs','waterCupMl','heightCm'];
       const snapshot: any = {}; for (const k of keys) (snapshot as any)[k] = (data as any)[k];
       const json = JSON.stringify(snapshot, null, 2);
       if (Platform.OS === 'android' && (FileSystem as any).StorageAccessFramework) {
@@ -211,7 +212,7 @@ export default function SettingsScreen() {
       if (res.canceled || !res.assets?.[0]?.uri) return;
       const txt = await FileSystem.readAsStringAsync(res.assets[0].uri, { encoding: FileSystem.EncodingType.UTF8 });
       const parsed = JSON.parse(txt);
-      const keys = ['days','goal','reminders','chat','saved','achievementsUnlocked','xp','language','theme','eventHistory','legendShown','rewardsSeen','profileAlias','xpLog','aiInsightsEnabled','aiFeedback','eventsEnabled','cycles','cycleLogs','waterCupMl'];
+      const keys = ['days','goal','reminders','chat','saved','achievementsUnlocked','xp','language','theme','eventHistory','legendShown','rewardsSeen','profileAlias','xpLog','aiInsightsEnabled','aiFeedback','eventsEnabled','cycles','cycleLogs','waterCupMl','heightCm'];
       const patch: any = {}; for (const k of keys) if (k in parsed) patch[k] = parsed[k];
       useAppStore.setState(patch);
       useAppStore.getState().recalcAchievements();
@@ -256,11 +257,28 @@ export default function SettingsScreen() {
           <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Wähle ein App-Theme. „Golden Pink“ ab Level 75.':(state.language==='pl'?'Wybierz motyw aplikacji. „Golden Pink” od poziomu 75.':'Choose an app theme. "Golden Pink" unlocks at level 75.')}</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
             {(['pink_default','pink_pastel','pink_vibrant','golden_pink'] as const).map((t) => (
-              <TouchableOpacity key={t} onPress={() => state.setTheme(t)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.theme===t?colors.primary:'transparent' }]}>
+              <TouchableOpacity key={t} onPress={() => state.setTheme(t)} style={[styles.badge, { borderColor: colors.muted, backgroundColor: state.theme===t?colors.primary:'transparent' }]}> 
                 <Text style={{ color: state.theme===t?'#fff':colors.text }}>{themeLabel(t, state.language as any)}</Text>
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        {/* Körpergröße (BMI) */}
+        <View style={[styles.card, { backgroundColor: colors.card }]}> 
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name='body' size={18} color={colors.primary} />
+            <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8 }}>{state.language==='de'?'Körpergröße':(state.language==='pl'?'Wzrost':'Height')}</Text>
+          </View>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Gib deine Größe in cm ein, um den BMI anzuzeigen.':(state.language==='pl'?'Podaj wzrost w cm, aby wyświetlić BMI.':'Enter your height in cm to show BMI.')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+            <Text style={{ color: colors.text, width: 160 }}>{state.language==='de'?'Größe':(state.language==='pl'?'Wzrost':'Height')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <TextInput keyboardType='number-pad' value={heightInput} onChangeText={setHeightInput} onBlur={() => { const n = parseInt((heightInput||'').replace(/[^0-9]/g,'' )||'0',10); const v = Math.max(100, Math.min(230, isNaN(n)?0:n)); state.setHeightCm(v); setHeightInput(v?String(v):''); }} style={{ flex: 1, borderWidth: 1, borderColor: colors.muted, borderRadius: 8, paddingHorizontal: 10, color: colors.text, backgroundColor: colors.input }} />
+              <Text style={{ color: colors.muted, marginLeft: 8 }}>cm</Text>
+            </View>
+          </View>
+          <Text style={{ color: colors.muted, marginTop: 6 }}>{state.language==='de'?'Bereich: 100–230 cm.':(state.language==='pl'?'Zakres: 100–230 cm.':'Range: 100–230 cm.')}</Text>
         </View>
 
         {/* Drinks settings */}

@@ -182,3 +182,21 @@ export function computeSimpleCorrelations(days: Record<string, DayData>) {
 
   return { corrWaterWeight, corrSportMood, corrCoffeeMood, corrCoffeeSleep };
 }
+
+// BMI helpers
+export function computeBMI(heightCm?: number, weightKg?: number): number | undefined {
+  if (typeof heightCm !== 'number' || heightCm <= 0) return undefined;
+  if (typeof weightKg !== 'number' || weightKg <= 0) return undefined;
+  const m = heightCm / 100;
+  const bmi = weightKg / (m * m);
+  if (!isFinite(bmi)) return undefined;
+  return bmi;
+}
+
+export function bmiCategory(bmi: number | undefined, lng: 'de'|'en'|'pl' = 'de') {
+  if (typeof bmi !== 'number') return { label: '', color: '#999' };
+  if (bmi < 18.5) return { label: lng==='en'?'Underweight':(lng==='pl'?'Niedowaga':'Untergewicht'), color: '#42a5f5' };
+  if (bmi < 25) return { label: lng==='en'?'Normal weight':(lng==='pl'?'Prawidłowa':'Normalgewicht'), color: '#2bb673' };
+  if (bmi < 30) return { label: lng==='en'?'Overweight':(lng==='pl'?'Nadwaga':'Übergewicht'), color: '#ffb300' };
+  return { label: lng==='en'?'Obesity':(lng==='pl'?'Otyłość':'Adipositas'), color: '#e53935' };
+}
