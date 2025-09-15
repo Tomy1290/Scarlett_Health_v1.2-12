@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Image, View, Text } from 'react-native';
-import { initializeNotifications, cancelAllNotifications } from '../src/utils/notifications';
+import { Image, View, Text, Platform } from 'react-native';
+import { initializeNotifications } from '../src/utils/notifications';
 import { scheduleCycleNotifications } from '../src/utils/cycleNotifications';
 import { useAppStore } from "../src/store/useStore";
+import { registerReminderRepairBackgroundTask } from "../src/utils/reminderRepair";
 
 export default function RootLayout() {
   const theme = useAppStore((s) => s.theme);
@@ -19,9 +20,10 @@ export default function RootLayout() {
       const initialized = await initializeNotifications();
       if (initialized) {
         const state = useAppStore.getState();
-        await cancelAllNotifications(); // safety: clear any legacy schedules
+        // Do NOT cancel or mass-plan user reminders on startup
         await scheduleCycleNotifications(state);
-        // Do NOT schedule reminders at startup. They get scheduled by user actions only.
+        // Background repair (every 30 minutes)
+        try { await registerReminderRepairBackgroundTask(30 * 60); } catch {}
       }
     })();
   }, []);
