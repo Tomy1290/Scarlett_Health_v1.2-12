@@ -5,7 +5,7 @@ function nextWeekly(from: Date, targetDow: number, hour = 9, minute = 0) {
   const d = new Date(from);
   d.setHours(hour, minute, 0, 0);
   const diff = (targetDow - d.getDay() + 7) % 7;
-  if (diff === 0 && +d &lt;= +from) d.setDate(d.getDate() + 7);
+  if (diff === 0 && +d <= +from) d.setDate(d.getDate() + 7);
   else d.setDate(d.getDate() + diff);
   return d;
 }
