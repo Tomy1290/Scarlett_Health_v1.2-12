@@ -30,7 +30,7 @@ export default function GalleryScreen() {
 
   async function addPhotoForToday(from: 'camera'|'gallery') {
     const key = toKey(new Date());
-    const current = state.days[key] || { date: key, pills: { morning: false, evening: false }, drinks: { water: 0, coffee: 0, slimCoffee: false, gingerGarlicTea: false, waterCure: false, sport: false } } as any;
+    const current = state.days[key] || { date: key, pills: { morning: false, evening: false }, drinks: { water: 0, coffee: 0, slimCoffee: false, gingerGarlicTea: false, waterCure: false, sport: false }, xpToday: {}, activityLog: [], photos: [] } as any;
     const list: PhotoMeta[] = Array.isArray((current as any).photos) ? ([...(current as any).photos] as any) : [];
     if (list.length >= 5) return;
     const meta = from==='camera' ? await captureAndCompress() : await pickAndCompress();
