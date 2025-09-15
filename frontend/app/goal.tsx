@@ -106,6 +106,14 @@ export default function GoalScreen() {
     const map = state.language==='en'?en:(state.language==='pl'?pl:de); return map[key] || key;
   }
 
+  function paceState() {
+    if (typeof currentWeight !== 'number' || !planSeries.length) return 'none' as const;
+    const plannedToday = planSeries[Math.min(todayIdx, planSeries.length - 1)]?.value || currentWeight;
+    const diff = currentWeight - plannedToday;
+    if (diff <= -0.2) return 'ahead' as const;
+    if (Math.abs(diff) <= 0.2) return 'on' as const;
+    return 'behind' as const;
+  }
   function paceText() {
     if (typeof currentWeight !== 'number' || !planSeries.length) return '';
     const plannedToday = planSeries[Math.min(todayIdx, planSeries.length - 1)]?.value || currentWeight;
