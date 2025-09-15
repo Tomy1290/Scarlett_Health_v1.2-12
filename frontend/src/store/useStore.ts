@@ -162,8 +162,8 @@ export const useAppStore = create<AppState>()(
         if (type === 'coffee') {
           const oldExcess = Math.max(0, prev - 6);
           const newExcess = Math.max(0, next - 6);
-          if (newExcess &gt; oldExcess) xpDelta -= 10 * (newExcess - oldExcess);
-          if (newExcess &lt; oldExcess) xpDelta += 10 * (oldExcess - newExcess);
+          if (newExcess > oldExcess) xpDelta -= 10 * (newExcess - oldExcess);
+          if (newExcess < oldExcess) xpDelta += 10 * (oldExcess - newExcess);
         }
 
         if (xpDelta !== 0) {
