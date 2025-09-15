@@ -3,6 +3,8 @@ import { Platform, Alert } from 'react-native';
 import * as Device from 'expo-device';
 
 // Configure notification handler to allow all notifications
+import * as Linking from 'expo-linking';
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
