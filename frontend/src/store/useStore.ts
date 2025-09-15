@@ -185,7 +185,7 @@ export const useAppStore = create<AppState>()(
       addReminder: (r) => { set({ reminders: [r, ...get().reminders] }); get().recalcAchievements(); },
       updateReminder: (id, patch) => set({ reminders: get().reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)) }),
       deleteReminder: (id) => { set({ reminders: get().reminders.filter((r) => r.id !== id) }); get().recalcAchievements(); },
-      addChat: (m) => { const lvl = Math.floor(get().xp / 100) + 1; let msg = m; if (m.sender === 'user' &amp;&amp; typeof m.text === 'string' &amp;&amp; m.text.length &gt; 120 &amp;&amp; lvl &lt; 50) { msg = { ...m, text: m.text.slice(0, 120) }; } set({ chat: [...get().chat, msg] }); get().recalcAchievements(); },
+      addChat: (m) => { const lvl = Math.floor(get().xp / 100) + 1; let msg = m; if (m.sender === 'user' && typeof m.text === 'string' && m.text.length > 120 && lvl < 50) { msg = { ...m, text: m.text.slice(0, 120) }; } set({ chat: [...get().chat, msg] }); get().recalcAchievements(); },
       addSaved: (s) => { set({ saved: [s, ...get().saved] }); get().recalcAchievements(); },
       updateSaved: (id, patch) => { const next = (get().saved||[]).map((s)=> s.id===id ? { ...s, ...patch } : s); set({ saved: next }); },
       deleteSaved: (id) => { set({ saved: get().saved.filter((s) => s.id !== id) }); get().recalcAchievements(); },
