@@ -125,7 +125,7 @@ export async function scheduleOneTimeNotification(title: string, body: string, d
   try {
     if (date <= new Date()) { logNotificationPlanned('OneTime', title, null); return null; }
     const nid = await Notifications.scheduleNotificationAsync({
-      content: { title, body, sound: true, ...(Platform.OS === 'android' && { channelId: channel }) },
+      content: { title, body, sound: true, data: data || {}, ...(Platform.OS === 'android' && { channelId: channel }) },
       trigger: { date },
     });
     logNotificationPlanned('OneTime', title, date);
