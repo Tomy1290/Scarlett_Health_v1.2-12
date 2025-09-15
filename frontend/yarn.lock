@@ -3611,6 +3611,13 @@ expo-asset@~11.1.7:
     "@expo/image-utils" "^0.7.6"
     expo-constants "~17.1.7"
 
+expo-background-fetch@^14.0.7:
+  version "14.0.7"
+  resolved "https://registry.yarnpkg.com/expo-background-fetch/-/expo-background-fetch-14.0.7.tgz#20888ae997ce9d62896370b8a01a4f28d1dd625c"
+  integrity sha512-vq/2w/I9OYkYbKn2YmMTzWEZm+Ddl8ObRtKR8s5kpfyGEIHz4rsIuHF1kpqHXuxI/DNZEhAN8fIO2nh+jNW5uQ==
+  dependencies:
+    expo-task-manager "~14.0.7"
+
 expo-blur@~14.1.5:
   version "14.1.5"
   resolved "https://registry.npmjs.org/expo-blur/-/expo-blur-14.1.5.tgz"
@@ -3626,7 +3633,7 @@ expo-constants@~17.1.7:
 
 expo-device@^8.0.7:
   version "8.0.7"
-  resolved "https://registry.yarnpkg.com/expo-device/-/expo-device-8.0.7.tgz#38d1d2c2a8008631bada2d6dca0612f8d350b23a"
+  resolved "https://registry.npmjs.org/expo-device/-/expo-device-8.0.7.tgz"
   integrity sha512-4psIFiFQbkcr2VAaOgCBsC0q7FPLtqsd0gjJmpCccxstvHMd9dmh7A+jSIwkFkEAcrkz+t1KxTp7McJAL+8sYA==
   dependencies:
     ua-parser-js "^0.7.33"
@@ -3763,6 +3770,13 @@ expo-system-ui@~5.0.11:
   dependencies:
     "@react-native/normalize-colors" "0.79.6"
     debug "^4.3.2"
+
+expo-task-manager@^14.0.7, expo-task-manager@~14.0.7:
+  version "14.0.7"
+  resolved "https://registry.yarnpkg.com/expo-task-manager/-/expo-task-manager-14.0.7.tgz#87d89ec73a85d973626be0c363bfa24ba9c4998c"
+  integrity sha512-wZRksJg4+Me1wDYmv0wnGh5I30ZOkEpjdXECp/cTKbON1ISQgnaz+4B2eJtljvEPYC1ocBdpAGmz9N0CPtc4mg==
+  dependencies:
+    unimodules-app-loader "~6.0.7"
 
 expo-web-browser@~14.2.0:
   version "14.2.0"
@@ -6985,7 +6999,7 @@ typescript@~5.8.3:
 
 ua-parser-js@^0.7.33:
   version "0.7.41"
-  resolved "https://registry.yarnpkg.com/ua-parser-js/-/ua-parser-js-0.7.41.tgz#9f6dee58c389e8afababa62a4a2dc22edb69a452"
+  resolved "https://registry.npmjs.org/ua-parser-js/-/ua-parser-js-0.7.41.tgz"
   integrity sha512-O3oYyCMPYgNNHuO7Jjk3uacJWZF8loBgwrfd/5LE/HyZ3lUIOdniQ7DNXJcIgZbwioZxk0fLfI4EVnetdiX5jg==
 
 ua-parser-js@^1.0.35:
@@ -7035,6 +7049,11 @@ unicode-property-aliases-ecmascript@^2.0.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/unicode-property-aliases-ecmascript/-/unicode-property-aliases-ecmascript-2.1.0.tgz"
   integrity sha512-6t3foTQI9qne+OZoVQB/8x8rk2k1eVy1gRXhV3oFQ5T6R1dqQ1xtin3XqSlx3+ATBkliTaR/hHyJBm+LVPNM8w==
+
+unimodules-app-loader@~6.0.7:
+  version "6.0.7"
+  resolved "https://registry.yarnpkg.com/unimodules-app-loader/-/unimodules-app-loader-6.0.7.tgz#d88db74075815bcdc088c6c6823a2b08394a1225"
+  integrity sha512-23iwxmh6/y54PRGJt/xjsOpPK8vlfusBisi3yaVSK22pxg5DmiL/+IHCtbb/crHC+gqdItcy1OoRsZQHfNSBaw==
 
 unique-string@~2.0.0:
   version "2.0.0"
