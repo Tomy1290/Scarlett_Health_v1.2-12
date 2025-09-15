@@ -1,1 +1,1 @@
-__PATCH__
+__APPLY_PATCH__

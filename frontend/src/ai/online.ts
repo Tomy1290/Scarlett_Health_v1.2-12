@@ -2,7 +2,6 @@ import { buildCompactSummary } from './summary';
 import { apiFetch } from '../utils/api';
 import type { AppState } from '../store/useStore';
 
-// Types aligned with backend /api/chat
 export type ChatMessage = { role: 'system'|'user'|'assistant'; content: string };
 export type ChatMode = 'greeting'|'chat';
 
@@ -29,12 +28,7 @@ async function callBackendChat(req: {
 export async function onlineGreeting(state: AppState) {
   const lang = (state.language || 'de') as 'de'|'en'|'pl';
   const summary = buildCompactSummary(state);
-  return await callBackendChat({
-    mode: 'greeting',
-    language: lang,
-    model: 'gpt-4o-mini',
-    summary,
-  });
+  return await callBackendChat({ mode: 'greeting', language: lang, model: 'gpt-4o-mini', summary });
 }
 
 export async function onlineReply(state: AppState, userText: string) {
@@ -42,13 +36,7 @@ export async function onlineReply(state: AppState, userText: string) {
   const summary = buildCompactSummary(state);
   const recent = (state.chat||[]).slice(-8).map(m => ({ role: m.sender==='user'?'user':'assistant', content: m.text })) as ChatMessage[];
   const messages: ChatMessage[] = [...recent, { role: 'user', content: userText }];
-  return await callBackendChat({
-    mode: 'chat',
-    language: lang,
-    model: 'gpt-4o-mini',
-    summary,
-    messages,
-  });
+  return await callBackendChat({ mode: 'chat', language: lang, model: 'gpt-4o-mini', summary, messages });
 }
 
 export async function onlineTopic(state: AppState, topic: 'cycle'|'weight'|'sleep'|'hydration'|'reminders') {
@@ -72,11 +60,18 @@ export async function onlineAnalysis(state: AppState) {
     : lang==='pl'
     ? `Przeanalizuj ostatnie wpisy i podaj: 1) krótkie podsumowanie (2–3 zdania), 2) 4 konkretne wskazówki, 3) opcjonalnie mini prognozę. Użyj liczb z podsumowania.`
     : `Analyze recent entries and provide: 1) short summary (2–3 sentences), 2) 4 action tips, 3) optional mini forecast. Use numbers from the summary.`);
-  return await callBackendChat({
-    mode: 'chat',
-    language: lang,
-    model: 'gpt-4o-mini',
-    summary,
-    messages: [{ role: 'user', content: prompt }],
-  });
+  return await callBackendChat({ mode: 'chat', language: lang, model: 'gpt-4o-mini', summary, messages: [{ role: 'user', content: prompt }] });
+}
+
+export async function onlineMotivation(state: AppState) {
+  const lang = (state.language || 'de') as 'de'|'en'|'pl';
+  const summary = buildCompactSummary(state);
+  const messages: ChatMessage[] = [
+    { role: 'user', content: (lang==='de'
+      ? `Erzeuge EINEN sehr kurzen motivierenden Satz (max. 18 Wörter) basierend auf den Gewichts‑Fortschritten. Nutze Zahlen aus summary (z. B. kg in 7 Tagen, Fortschritt %, Resttage). Kein Emoji überschäumen – maximal 1. Ziel: freundlich, präzise, variieren.`
+      : lang==='pl'
+      ? `Utwórz JEDNO bardzo krótkie motywacyjne zdanie (max 18 słów) na podstawie postępów wagi. Użyj liczb z podsumowania. Maks. 1 emoji.`
+      : `Create ONE very short motivating sentence (max 18 words) based on weight progress. Use numbers from summary. Max 1 emoji.`) }
+  ];
+  return await callBackendChat({ mode: 'chat', language: lang, model: 'gpt-4o-mini', summary, messages });
 }
