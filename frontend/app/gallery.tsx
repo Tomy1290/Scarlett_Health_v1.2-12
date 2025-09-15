@@ -28,6 +28,15 @@ export default function GalleryScreen() {
     return out.sort((a,b)=> a.date.localeCompare(b.date)).reverse();
   }, [state.days]);
 
+  const totals = useMemo(() => {
+    let bytes = 0; let count = 0;
+    for (const row of daysWithPhotos) {
+      for (const ph of row.photos) { bytes += Number((ph as any).size || 0); count += 1; }
+    }
+    const mb = Math.round(bytes / (1024*1024) * 10) / 10;
+    return { mb, count };
+  }, [daysWithPhotos]);
+
   async function addPhotoForToday(from: 'camera'|'gallery') {
     const key = toKey(new Date());
     const current = state.days[key] || { date: key, pills: { morning: false, evening: false }, drinks: { water: 0, coffee: 0, slimCoffee: false, gingerGarlicTea: false, waterCure: false, sport: false }, xpToday: {}, activityLog: [], photos: [] } as any;
@@ -36,7 +45,7 @@ export default function GalleryScreen() {
     const meta = from==='camera' ? await captureAndCompress() : await pickAndCompress();
     if (!meta) return;
     list.push(meta);
-    if (list.length > 5) list.splice(5); // cap to 5
+    if (list.length > 5) list.splice(5);
     const next = { ...current, photos: list };
     const days = { ...state.days, [key]: next } as any;
     useAppStore.setState({ days });
@@ -52,7 +61,7 @@ export default function GalleryScreen() {
     if (rm) await deletePhoto(rm);
   }
 
-  const t = (key: string) => { const de: Record<string,string> = { title: 'Galerie', add: 'Hinzufügen', none: 'Keine Fotos vorhanden.', today: 'Heute', camera: 'Kamera', gallery: 'Galerie' }; const en: Record<string,string> = { title: 'Gallery', add: 'Add', none: 'No photos yet.', today: 'Today', camera: 'Camera', gallery: 'Gallery' }; const pl: Record<string,string> = { title: 'Galeria', add: 'Dodaj', none: 'Brak zdjęć.', today: 'Dziś', camera: 'Aparat', gallery: 'Galeria' }; return (state.language==='en'?en:(state.language==='pl'?pl:de))[key] || key; };
+  const t = (key: string) => { const de: Record<string,string> = { title: 'Galerie', add: 'Hinzufügen', none: 'Keine Fotos vorhanden.', today: 'Heute', camera: 'Kamera', gallery: 'Galerie', usage: 'Gespeicherte Fotos' }; const en: Record<string,string> = { title: 'Gallery', add: 'Add', none: 'No photos yet.', today: 'Today', camera: 'Camera', gallery: 'Gallery', usage: 'Stored photos' }; const pl: Record<string,string> = { title: 'Galeria', add: 'Dodaj', none: 'Brak zdjęć.', today: 'Dziś', camera: 'Aparat', gallery: 'Galeria', usage: 'Zapisane zdjęcia' }; return (state.language==='en'?en:(state.language==='pl'?pl:de))[key] || key; };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -67,7 +76,10 @@ export default function GalleryScreen() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         <View style={[styles.card, { backgroundColor: colors.card }]}> 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ color: colors.text, fontWeight: '700' }}>{t('today')}</Text>
+            <View>
+              <Text style={{ color: colors.text, fontWeight: '700' }}>{t('today')}</Text>
+              <Text style={{ color: colors.muted, marginTop: 4 }}>{t('usage')}: {totals.count} · {totals.mb} MB</Text>
+            </View>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity onPress={() => addPhotoForToday('camera')} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('camera')}</Text></TouchableOpacity>
               <TouchableOpacity onPress={() => addPhotoForToday('gallery')} style={[styles.badge, { borderColor: colors.muted }]}><Text style={{ color: colors.text }}>{t('gallery')}</Text></TouchableOpacity>
@@ -87,7 +99,7 @@ export default function GalleryScreen() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
               {row.photos.map((p, idx) => (
                 <View key={idx} style={{ width: '31%', aspectRatio: 1, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
-                  <Image source={{ uri: p.thumbUri || p.uri }} style={{ flex: 1 }} />
+                  <Image source={{ uri: (p as any).thumbUri || (p as any).uri }} style={{ flex: 1 }} />
                   <TouchableOpacity onPress={() => removePhoto(row.date, idx)} style={{ position: 'absolute', right: 6, top: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, padding: 4 }}>
                     <Ionicons name='trash' size={14} color='#fff' />
                   </TouchableOpacity>
