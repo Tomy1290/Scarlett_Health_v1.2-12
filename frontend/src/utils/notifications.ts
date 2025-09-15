@@ -39,7 +39,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   }
 }
 
-export async function setupAndroidChannels(): Promise&lt;void&gt; {
+export async function setupAndroidChannels(): Promise<void> {
   if (Platform.OS !== 'android') return;
   try {
     await Notifications.setNotificationChannelAsync('reminders', {
@@ -131,15 +131,15 @@ export async function scheduleOneTimeNotification(title: string, body: string, d
   } catch (e) { console.error('❌ scheduleOneTimeNotification error:', e); return null; }
 }
 
-export async function cancelNotification(notificationId: string): Promise&lt;void&gt; {
+export async function cancelNotification(notificationId: string): Promise<void> {
   try { await Notifications.cancelScheduledNotificationAsync(notificationId); } catch (e) { console.error('❌ cancelNotification error:', e); }
 }
 
-export async function cancelAllNotifications(): Promise&lt;void&gt; { try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch (e) { console.error('❌ cancelAllNotifications error:', e);} }
+export async function cancelAllNotifications(): Promise<void> { try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch (e) { console.error('❌ cancelAllNotifications error:', e);} }
 
 export async function getScheduledNotifications(): Promise&lt;Notifications.NotificationRequest[]&gt; { try { return await Notifications.getAllScheduledNotificationsAsync(); } catch { return []; } }
 
-export async function testNotification(): Promise&lt;void&gt; {
+export async function testNotification(): Promise<void> {
   try {
     const has = await requestNotificationPermissions(); if (!has) { Alert.alert('Fehler', 'Benachrichtigungen sind nicht erlaubt.'); return; }
     await setupAndroidChannels();
