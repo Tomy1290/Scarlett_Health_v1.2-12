@@ -1,5 +1,5 @@
 import { differenceInCalendarDays } from "date-fns";
-export type DayData = { date: string; pills: { morning: boolean; evening: boolean }; drinks: { water: number; coffee: number; slimCoffee: boolean; gingerGarlicTea: boolean; waterCure: boolean; sport: boolean }; weight?: number; weightTime?: number };
+export type DayData = { date: string; pills: { morning: boolean; evening: boolean }; drinks: { water: number; coffee: number; slimCoffee: boolean; gingerGarlicTea: boolean; waterCure: boolean; sport: boolean }; weight?: number; weightTime?: number; photos?: any[]; };
 export type Goal = { targetWeight: number; targetDate: string; startWeight: number; active: boolean };
 export type Reminder = { id: string; type: string; time: string; enabled: boolean };
 export type ChatMessage = { id: string; sender: "user" | "bot"; text: string; createdAt: number };
